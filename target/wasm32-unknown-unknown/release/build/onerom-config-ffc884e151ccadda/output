@@ -1,5 +1,0 @@
-cargo:rerun-if-changed=build
-cargo:rerun-if-changed=/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/onerom-config-0.1.1/json
-cargo:rerun-if-changed=/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/onerom-config-0.1.1/json/user
-cargo:rerun-if-changed=/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/onerom-config-0.1.1/json/third-party
-cargo:rerun-if-changed=/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/onerom-config-0.1.1/json/rom-types.json
