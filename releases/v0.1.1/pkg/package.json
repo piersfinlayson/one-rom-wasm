@@ -9,7 +9,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/piersfinlayson/one-rom"
+    "url": "https://github.com/piersfinlayson/one-rom-wasm"
   },
   "files": [
     "onerom_wasm_bg.wasm",
