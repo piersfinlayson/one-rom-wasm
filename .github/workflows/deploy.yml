@@ -39,21 +39,6 @@ jobs:
       - name: Build
         run: ./build.sh
 
-      - name: Prepare deployment files (main)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          mkdir -p deploy
-          cp LICENSE.md index.html style.css deploy/
-          cp -r pkg docs js deploy/
-          rm deploy/pkg/.gitignore
-
-      - name: Debug deployment directory
-        if: github.ref == 'refs/heads/main'
-        run: |
-          ls -laR deploy/
-          echo "---"
-          ls -la pkg/
-
       - name: Deploy to root (main branch)
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
@@ -67,28 +52,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Checkout gh-pages for version cleanup
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages-branch
-
-      - name: Remove existing version directory
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          cd gh-pages-branch
-          rm -rf ${{ steps.version.outputs.VERSION }}
-          cd ..
-
-      - name: Prepare deployment files (tag)
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          mkdir -p deploy
-          cp LICENSE.md index.html style.css deploy/
-          cp -r pkg docs js deploy/
-          rm deploy/pkg/.gitignore
 
       - name: Deploy to version directory (tag)
         if: startsWith(github.ref, 'refs/tags/v')
