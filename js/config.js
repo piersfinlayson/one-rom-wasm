@@ -24,7 +24,7 @@ sorted_roms.forEach(rom => {
     
     // Format control lines info
     const controlLines = info.control_lines
-        .map(cl => `${cl.configurable ? '*' : ''}${cl.name.toUpperCase()} (pin ${cl.pin})`)
+        .map(cl => `${cl.name.toUpperCase()}${cl.configurable ? '*' : ''} (pin ${cl.pin})`)
         .join(', ');
     
     // Build address pin mapping tooltip
