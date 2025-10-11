@@ -61,3 +61,26 @@ jobs:
           publish_dir: ./deploy
           destination_dir: releases/${{ steps.version.outputs.VERSION }}
           keep_files: true
+
+      - name: Checkout gh-pages to generate releases index
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-branch
+
+      - name: Generate releases index
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          source scripts/html-utils.sh
+          generate_index "gh-pages-branch/releases" "Releases"
+          mkdir -p releases-listing/releases
+          mv gh-pages-branch/releases/index.html releases-listing/releases/
+
+      - name: Deploy releases index to root
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./releases-listing
+          keep_files: true

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 generate_index() {
     local dir="$1"
@@ -33,9 +32,3 @@ EOF
 </html>
 EOF
 }
-
-# Generate requested listings
-generate_index "deploy/pkg" "Package Files"
-if [ -d "deploy/releases" ]; then
-    generate_index "deploy/releases" "Releases"
-fi

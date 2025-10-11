@@ -16,6 +16,6 @@ cp -r pkg docs js deploy/
 rm -f deploy/pkg/.gitignore
 
 # Generate directory listings
-./scripts/generate-listings.sh
+./scripts/generate-pkg-index.sh
 
 echo "Deployment files prepared in deploy/"
