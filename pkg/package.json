@@ -5,11 +5,11 @@
     "Piers Finlayson <piers@piers.rocks>"
   ],
   "description": "One ROM Supporting Tooling Web Assembly Implementation",
-  "version": "0.1.1-dev+932b361",
+  "version": "0.1.1-dev+9356fff",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/piersfinlayson/one-rom"
+    "url": "https://github.com/piersfinlayson/one-rom-wasm"
   },
   "files": [
     "onerom_wasm_bg.wasm",
