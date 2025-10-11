@@ -1,0 +1,75 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Mark as development version
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sed -i 's/^version = "\(.*\)"/version = "\1-dev+'"${GITHUB_SHA:0:7}"'"/' Cargo.toml
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Deploy to root (main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          keep_files: true
+          exclude_assets: '.github,src,.gitignore,Cargo.*,build.sh,test.sh'
+
+      - name: Extract version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Checkout gh-pages for version cleanup
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-branch
+
+      - name: Remove existing version directory
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd gh-pages-branch
+          rm -rf ${{ steps.version.outputs.VERSION }}
+          cd ..
+
+      - name: Deploy to version directory (tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          destination_dir: ${{ steps.version.outputs.VERSION }}
+          keep_files: true
+          exclude_assets: '.github,src,.gitignore,Cargo.*,build.sh,test.sh'
