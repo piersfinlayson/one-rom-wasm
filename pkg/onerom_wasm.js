@@ -287,7 +287,7 @@ export function board_info(name) {
     return takeFromExternrefTable0(ret[0]);
 }
 
-function __wbg_adapter_6(arg0, arg1, arg2) {
+function __wbg_adapter_10(arg0, arg1, arg2) {
     wasm.closure41_externref_shim(arg0, arg1, arg2);
 }
 
@@ -488,7 +488,7 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbindgen_cast_c6111fef16576abb = function(arg0, arg1) {
         // Cast intrinsic for `Closure(Closure { dtor_idx: 40, function: Function { arguments: [Externref], shim_idx: 41, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 40, __wbg_adapter_6);
+        const ret = makeMutClosure(arg0, arg1, 40, __wbg_adapter_10);
         return ret;
     };
     imports.wbg.__wbindgen_cast_d6cd19b81560fd6e = function(arg0) {
