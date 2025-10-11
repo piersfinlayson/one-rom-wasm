@@ -1,4 +1,4 @@
-import init, { version, rom_types, rom_type_info, mcus, mcu_info, boards, board_info, parse_firmware } from '../../pkg/onerom_wasm.js';
+import init, { version, rom_types, rom_type_info, mcus, mcu_info, boards, board_info, parse_firmware } from '../pkg/onerom_wasm.js';
 
 await init();
 
