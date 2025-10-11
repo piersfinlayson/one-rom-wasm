@@ -1,0 +1,54 @@
+.info p {
+    display: flex;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.info strong {
+    min-width: 150px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 0.75rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+th {
+    background-color: var(--input-bg-color);
+    font-weight: 500;
+    color: var(--one-rom-gold);
+}
+
+tr:hover {
+    background-color: var(--input-bg-color);
+}
+
+tr:hover td {
+    color: var(--one-rom-gold);
+}
+
+td {
+    font-size: 0.875rem;
+}
+
+.hoverable {
+    cursor: help;
+}
+
+.info-icon {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-left: 0.25rem;
+}
+
+.hoverable:hover .info-icon {
+    color: var(--one-rom-gold);
+}

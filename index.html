@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>One ROM WASM Library</title>
+    <link rel="stylesheet" href="https://onerom.org/style.css">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/png" href="https://onerom.org/favicon.png">
+</head>
+<body>
+    <div class="app">
+        <h1>One R<span class="o-in-rom">O</span>M WASM Library</h1>
+
+        <div class="info">
+            <p>
+                <Strong>Site Purpose</Strong>This site hosts the latest version of One ROM Web Assembly library.
+            </p>
+            <p>
+                <Strong>API Docs</Strong><a href="/docs/" target="_blank">/docs/</a>
+            </p>
+            <p>
+                <Strong>Examples</Strong> See this page's source for implementation examples.
+            </p>
+            <p>
+                <strong>Licence</strong> <a href="/LICENSE.md">MIT</a>
+            </p>
+            <p>
+                <strong>Library Version</strong> <span id="version"></span>
+            </p>
+        </div>
+
+        <hr>
+
+        <details>
+            <summary>ROM Types</summary>
+            <div class="info">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Size (bytes)</th>
+                            <th>Pins</th>
+                            <th>Address Lines</th>
+                            <th>Control Lines</th>
+                        </tr>
+                    </thead>
+                    <tbody id="romTable"></tbody>
+                </table>
+                <p style="font-size: 0.9em; margin-top: 0.5em;">* = configurable polarity</p>
+            </div>
+        </details>
+
+        <hr>
+
+        <details>
+            <summary>One ROM Boards</summary>
+            <div class="info">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Board</th>
+                            <th>Description</th>
+                            <th>MCU Family</th>
+                            <th>ROM Pins</th>
+                            <th>Address Lines</th>
+                            <th>Data Lines</th>
+                            <th>SEL Lines</th>
+                            <th>Features</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boardTable"></tbody>
+                </table>
+            </div>
+        </details>
+
+        <hr>
+
+        <details>
+            <summary>Supported MCUs</summary>
+            <div class="info">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variant</th>
+                            <th>Family</th>
+                            <th>Flash (KB)</th>
+                            <th>RAM (KB)</th>
+                            <th>Max Clock (MHz)</th>
+                            <th>Features</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mcuTable"></tbody>
+                </table>
+            </div>
+        </details>
+
+        <hr>
+
+        <details>
+            <summary>Firmware Parsing</summary>
+            <p>Select a firmware file and click Parse Firmware</p>
+            <div class="controls">
+                <div>
+                    <label>Firmware File: <input type="file" id="fileInput" accept=".bin,.elf"></label>
+                </div>
+                <div>
+                    <button class="gold-button" id="parseBtn">Parse Firmware</button>
+                </div>
+            </div>
+            <div class="firmware-details" id="output"></div>
+        </details>
+
+        <div id="footer"></div>
+        <script src="/js/footer.js" type="module"></script>
+    </div>
+
+    <script type="module" src="/js/config.js"></script>
+</body>
+</html>
