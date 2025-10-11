@@ -4,30 +4,48 @@
     <meta charset="utf-8">
     <title>One ROM WASM Library</title>
     <link rel="stylesheet" href="https://onerom.org/style.css">
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="https://onerom.org/favicon.png">
 </head>
 <body>
     <div class="app">
         <h1>One R<span class="o-in-rom">O</span>M WASM Library</h1>
 
-        <div class="info">
+        <details open>
+            <summary>About</summary>
             <p>
-                <Strong>Site Purpose</Strong>This site hosts the latest version of One ROM Web Assembly library.
+                This site hosts releases of the One ROM Web Assembly library.
             </p>
-            <p>
-                <Strong>API Docs</Strong><a href="/docs/" target="_blank">/docs/</a>
-            </p>
-            <p>
-                <Strong>Examples</Strong> See this page's source for implementation examples.
-            </p>
-            <p>
-                <strong>Licence</strong> <a href="/LICENSE.md">MIT</a>
-            </p>
-            <p>
-                <strong>Library Version</strong> <span id="version"></span>
-            </p>
-        </div>
+
+            <hr style="margin-bottom: 1rem;">
+            <h3>Releases</h3>
+            <div class="info">
+                <p>
+                    <strong>Release Files</strong><a href="releases/" target="_blank">releases/</a>
+                </p>
+                <p>
+                    <strong>Source Code</strong> <a href="https://github.com/piersfinlayson/one-rom-wasm" target="_blank">GitHub</a>
+                </p>
+                <p>
+                    <strong>Licence</strong> <a href="LICENSE.md" target="_blank">MIT</a>
+                </p>
+            </div>
+
+            <hr style="margin-bottom: 1rem;">
+
+            <div class="info">
+                <h3>Bleeding Edge</h3>
+                <p>
+                    <strong>API Docs</strong><a href="docs/" target="_blank">docs/</a>
+                </p>
+                <p>
+                    <strong>Package Files</strong> <a href="pkg/" target="_blank">pkg/</a>
+                </p>
+                <p>
+                    <strong>Library Version</strong> <span id="version"></span>
+                </p>
+            </div>
+        </details>
 
         <hr>
 
@@ -111,9 +129,9 @@
         </details>
 
         <div id="footer"></div>
-        <script src="/js/footer.js" type="module"></script>
+        <script src="js/footer.js" type="module"></script>
     </div>
 
-    <script type="module" src="/js/config.js"></script>
+    <script type="module" src="js/config.js"></script>
 </body>
 </html>
