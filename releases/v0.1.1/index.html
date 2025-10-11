@@ -5,7 +5,26 @@
     <title>One ROM WASM Library</title>
     <link rel="stylesheet" href="https://onerom.org/style.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="https://onerom.org/favicon.png">
+    <link rel="icon" type="image/png" href="https://onerom.org/images/favicon.png">
+
+    <!-- SEO title & description -->
+    <title>One ROM WASM Library</title>
+    <meta name="description" content="Supporting Web Assembly Implementation for One ROM - The Most Flexible Retro ROM Replacement">
+    <link rel="canonical" href="https://wasm.onerom.org/" />
+
+    <!-- Open Graph for social media -->
+    <meta property="og:url" content="https://wasm.onerom.org/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="One ROM WASM Library">
+    <meta property="og:description" content="Supporting Web Assembly Implementation for One ROM - The Most Flexible Retro ROM Replacement">
+    <meta property="og:image" content="https://onerom.org/images/one-rom/one%20rom%20image%20social.png">
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://wasm.onerom.org/">
+    <meta name="twitter:title" content="One ROM WASM Library">
+    <meta name="twitter:description" content="Supporting Web Assembly Implementation for One ROM - The Most Flexible Retro ROM Replacement">
+    <meta name="twitter:image" content="https://onerom.org/images/one-rom/one%20rom%20image%20social.png">
 </head>
 <body>
     <div class="app">
@@ -14,35 +33,55 @@
         <details open>
             <summary>About</summary>
             <p>
-                This site hosts releases of the One ROM Web Assembly library.
+                This site hosts One ROM Web Assembly library, which can be used to:
+                <ul>
+                    <li>Retrieve properties of generic ROMs, including 23 mask programmed and 27 EPROMs</li>
+                    <li>Parse One ROM firmware .bin files</li>
+                    <li>Parse One ROM firmware read from flash</li>
+                    <li>Retrieve information about One ROM hardware versions and supported MCUs</li>
+                    <li>Generate One ROM firmware metadata and ROM image files (coming soon)</li>
+                </ul>
             </p>
 
             <hr style="margin-bottom: 1rem;">
-            <h3>Releases</h3>
+
+            <h3>Project Information</h3>
             <div class="info">
-                <p>
-                    <strong>Release Files</strong><a href="releases/" target="_blank">releases/</a>
-                </p>
                 <p>
                     <strong>Source Code</strong> <a href="https://github.com/piersfinlayson/one-rom-wasm" target="_blank">GitHub</a>
                 </p>
                 <p>
                     <strong>Licence</strong> <a href="LICENSE.md" target="_blank">MIT</a>
                 </p>
+                <p>
+                    <strong>Author</strong> <a href="https://piers.rocks/" target="_blank">Piers Finlayson</a>
+                </p>
+                <p>
+                    <strong>Release Files</strong><a href="releases/" target="_blank">releases/</a>
+                </p>
             </div>
 
             <hr style="margin-bottom: 1rem;">
 
             <div class="info">
-                <h3>Bleeding Edge</h3>
+                <h3>This Version</h3>
+                <p>
+                    <strong>Version</strong> <span id="version"></span>
+                </p>
                 <p>
                     <strong>API Docs</strong><a href="docs/" target="_blank">docs/</a>
                 </p>
                 <p>
                     <strong>Package Files</strong> <a href="pkg/" target="_blank">pkg/</a>
                 </p>
+            </div>
+
+            <hr style="margin-bottom: 1rem;">
+
+            <div class="info">
+                <h3>Functionality and Examples</h3>
                 <p>
-                    <strong>Library Version</strong> <span id="version"></span>
+                    The remainder of this page demonstrates some of the functionality of the library.  See the page source for the code.
                 </p>
             </div>
         </details>
@@ -71,7 +110,7 @@
         <hr>
 
         <details>
-            <summary>One ROM Boards</summary>
+            <summary>One ROM Hardware Versions</summary>
             <div class="info">
                 <table>
                     <thead>
@@ -116,7 +155,7 @@
 
         <details>
             <summary>Firmware Parsing</summary>
-            <p>Select a firmware file and click Parse Firmware</p>
+            <p>Select a One ROM firmware file and click Parse Firmware</p>
             <div class="controls">
                 <div>
                     <label>Firmware File: <input type="file" id="fileInput" accept=".bin,.elf"></label>
