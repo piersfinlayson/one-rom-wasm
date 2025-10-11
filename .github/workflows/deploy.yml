@@ -45,6 +45,13 @@ jobs:
           cp index.html style.css deploy/
           cp -r pkg docs js deploy/
 
+      - name: Debug deployment directory
+        if: github.ref == 'refs/heads/main'
+        run: |
+          ls -laR deploy/
+          echo "---"
+          ls -la pkg/
+
       - name: Deploy to root (main branch)
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
