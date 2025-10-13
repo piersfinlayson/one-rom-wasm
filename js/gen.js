@@ -143,6 +143,8 @@ parseBtn.addEventListener('click', async () => {
         return;
     }
 
+    parseBtn.disabled = true;
+
     // Get hardware properties
     const boardType = boardDropdown.value;
     const firmwareProperties = {
@@ -273,9 +275,9 @@ probe-rs reset --chip ${chip_id}`;
     }
     catch (e) {
         updateStatus(`Error: ${e}`);
-        return;
     }
 
+    parseBtn.disabled = false;
 
     return;
 });
