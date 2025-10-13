@@ -38,4 +38,4 @@ npm install @types/node
 
 10. Update the version in Cargo.toml to the next development version (e.g., X.Y.Z+1).
 
-The GitHub workflow automatically builds and published the updated site on a commit to the main branch, and also stores off the new release at releases/vX.Y.Z/ when a new 'v*' tag is pushed.
+The GitHub workflow automatically builds and publishes the updated site on a commit to the main branch, and also stores off the new release at releases/vX.Y.Z/ when a new 'v*' tag is pushed.1
