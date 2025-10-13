@@ -6,6 +6,8 @@ use serde::Serialize;
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
+use onerom_config::fw::FirmwareProperties;
+use onerom_gen::{Builder as GenBuilder, FileData};
 use sdrr_fw_parser::{Parser, readers::MemoryReader};
 
 /// Initialize logging and panic hook
@@ -19,6 +21,56 @@ pub fn init() {
 #[wasm_bindgen]
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+/// Version information for the various components
+#[wasm_bindgen]
+pub struct VersionInfo {
+    onerom_wasm: String,
+    onerom_config: String,
+    onerom_gen: String,
+    sdrr_fw_parser: String,
+    metadata_version: String,
+}
+
+#[wasm_bindgen]
+impl VersionInfo {
+    #[wasm_bindgen(getter)]
+    pub fn onerom_wasm(&self) -> String {
+        self.onerom_wasm.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn onerom_config(&self) -> String {
+        self.onerom_config.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn onerom_gen(&self) -> String {
+        self.onerom_gen.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn sdrr_fw_parser(&self) -> String {
+        self.sdrr_fw_parser.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn metadata_version(&self) -> String {
+        self.metadata_version.clone()
+    }
+}
+
+/// Get version information for the various components
+#[wasm_bindgen]
+pub fn versions() -> VersionInfo {
+    VersionInfo {
+        onerom_wasm: env!("CARGO_PKG_VERSION").to_string(),
+        onerom_config: onerom_config::crate_version().to_string(),
+        onerom_gen: onerom_gen::crate_version().to_string(),
+        sdrr_fw_parser: sdrr_fw_parser::crate_version().to_string(),
+        metadata_version: onerom_gen::metadata_version().to_string(),
+    }
 }
 
 /// Parse a firmware image and return the extracted information as a JSON
@@ -256,6 +308,14 @@ pub fn boards() -> Result<Vec<String>, JsValue> {
     Ok(boards)
 }
 
+/// Return the flash base address for a specific MCU family
+#[wasm_bindgen]
+pub fn mcu_flash_base(name: &str) -> Result<u32, JsValue> {
+    let family = onerom_config::mcu::Family::try_from_str(name)
+        .ok_or_else(|| JsValue::from_str(&format!("Unknown MCU family: {}", name)))?;
+    Ok(family.get_flash_base())
+}
+
 /// Return detailed information about a specific PCB/Board
 #[wasm_bindgen]
 pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
@@ -292,4 +352,183 @@ pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
     };
 
     Ok(info)
+}
+
+#[wasm_bindgen]
+pub struct ValuePrettyPair {
+    value: String,
+    pretty: String,
+}
+
+#[wasm_bindgen]
+impl ValuePrettyPair {
+    #[wasm_bindgen(getter)]
+    pub fn value(&self) -> String {
+        self.value.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn pretty(&self) -> String {
+        self.pretty.clone()
+    }
+}
+
+/// Get a list of boards for a specific MCU family
+#[wasm_bindgen]
+pub fn boards_for_mcu_family(family_name: String) -> Result<Vec<ValuePrettyPair>, JsValue> {
+    let family = onerom_config::mcu::Family::try_from_str(&family_name)
+        .ok_or_else(|| JsValue::from_str(&format!("Unknown MCU family: {}", family_name)))?;
+    
+    let boards: Vec<ValuePrettyPair> = onerom_config::hw::BOARDS
+        .iter()
+        .filter(|b| b.mcu_family() == family)
+        .map(|b| ValuePrettyPair {
+            value: b.name().to_string(),
+            pretty: format_board_name(b.name()),
+        })
+        .collect();
+    
+    Ok(boards)
+}
+
+fn format_board_name(name: &str) -> String {
+    // Convert "ice-24-g" to "Ice 24 G"
+    name.split('-')
+        .map(|part| {
+            // Check for known acronyms
+            match part.to_uppercase().as_str() {
+                "USB" => "USB".to_string(),
+                _ => {
+                    let mut chars = part.chars();
+                    match chars.next() {
+                        None => String::new(),
+                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    }
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Get a list of MCUs for a specific board
+#[wasm_bindgen]
+pub fn mcus_for_mcu_family(family_name: String) -> Result<Vec<ValuePrettyPair>, JsValue> {
+    let family = onerom_config::mcu::Family::try_from_str(&family_name)
+         .ok_or_else(|| JsValue::from_str(&format!("Unknown MCU family: {}", family_name)))?;
+
+    let mcus: Vec<ValuePrettyPair> = onerom_config::mcu::MCU_VARIANTS
+        .iter()
+        .filter(|v| v.family() == family)
+        .map(|v| ValuePrettyPair {
+            value: v.to_string(),
+            pretty: v.to_string(),  // For now, just use the same string
+        })
+        .collect();
+    Ok(mcus)
+}
+
+/// Get MCU variant (probe-rs) chip ID
+#[wasm_bindgen]
+pub fn mcu_chip_id(variant_name: String) -> Result<String, JsValue> {
+    let variant = onerom_config::mcu::Variant::try_from_str(&variant_name)
+        .ok_or_else(|| JsValue::from_str(&format!("Unknown MCU variant: {}", variant_name)))?;
+    Ok(variant.chip_id().to_string())
+}
+
+/// Builder for generating firmware images
+#[wasm_bindgen]
+pub struct WasmGenBuilder(GenBuilder);
+
+/// Specification for a file that needs to be retrieved and added to the builder
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct WasmFileSpec{
+    pub id: usize,
+    pub source: String,
+    pub extract: Option<String>,
+    pub size_handling: String,
+    pub rom_type: String,
+    pub description: Option<String>,
+    pub rom_size: usize,
+    pub set_id: usize,
+    pub cs1: Option<String>,
+    pub cs2: Option<String>,
+    pub cs3: Option<String>,
+    pub set_type: String,
+    pub set_description: Option<String>,
+}
+
+/// Result of building a firmware image: (firmware_image, metadata_json)
+#[wasm_bindgen]
+#[allow(dead_code)]
+pub struct WasmImages(Vec<u8>, Vec<u8>);
+
+#[wasm_bindgen]
+impl WasmImages {
+    #[wasm_bindgen(getter)]
+    pub fn metadata(&self) -> Vec<u8> {
+        self.0.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn firmware_images(&self) -> Vec<u8> {
+        self.1.clone()
+    }
+}
+
+/// Create a GenBuilder from a JSON configuration string
+#[wasm_bindgen]
+pub fn gen_builder_from_json(config_json: &str) -> Result<WasmGenBuilder, String> {
+    Ok(WasmGenBuilder(GenBuilder::from_json(config_json)
+        .map_err(|e| format!("Error creating GenBuilder: {e:?}"))?))
+}
+
+/// Get the list of file specifications from the builder
+#[wasm_bindgen]
+pub fn gen_file_specs(builder: &WasmGenBuilder) -> Vec<WasmFileSpec> {
+    builder.0.file_specs()
+        .into_iter()
+        .map(|spec| WasmFileSpec {
+            id: spec.id,
+            source: spec.source,
+            extract: spec.extract,
+            size_handling: serde_json::to_string(&spec.size_handling).unwrap().trim_matches('"').to_string(),
+            rom_size: spec.rom_size,
+            rom_type: serde_json::to_string(&spec.rom_type.name()).unwrap().trim_matches('"').to_string(),
+            description: spec.description,
+            set_id: spec.set_id,
+            cs1: serde_json::to_string(&spec.cs1).ok().map(|s| s.trim_matches('"').to_string()),
+            cs2: serde_json::to_string(&spec.cs2).ok().map(|s| s.trim_matches('"').to_string()),
+            cs3: serde_json::to_string(&spec.cs3).ok().map(|s| s.trim_matches('"').to_string()),
+            set_type: serde_json::to_string(&spec.set_type).unwrap().trim_matches('"').to_string(),
+            set_description: spec.set_description,
+        })
+        .collect()
+}
+
+/// Add a retrieved file to the builder
+#[wasm_bindgen]
+pub fn gen_add_file(builder: &mut WasmGenBuilder, id: usize, data: Vec<u8>) -> Result<(), String> {
+    let file_data = FileData { id, data };
+    builder.0.add_file(file_data)
+        .map_err(|e| format!("Error adding file: {e:?}"))
+}
+
+/// Build the firmware image from the builder and properties.
+/// Properties should be a JS object with shape:
+/// {
+///   version: {major: u16, minor: u16, patch: u16, build: u16},
+///   board: string,
+///   serve_alg: string,
+///   boot_logging: bool
+/// }
+#[wasm_bindgen]
+pub fn gen_build(builder: &WasmGenBuilder, properties: JsValue) -> Result<WasmImages, String> {
+    let props: FirmwareProperties = serde_wasm_bindgen::from_value(properties)
+        .map_err(|e| format!("Error deserializing properties: {}", e))?;
+    
+    builder.0.build(props)
+        .map(|(firmware_image, metadata_json)| WasmImages(firmware_image, metadata_json))
+        .map_err(|e| format!("Error building firmware image: {e:?}"))
 }

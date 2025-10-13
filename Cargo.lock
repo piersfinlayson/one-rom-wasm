@@ -305,25 +305,34 @@ checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
 name = "onerom-config"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c13b9b431c7295ac42308092d6f984c04a2fe41c6ce2b20f729c364b8dadd49c"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",
 ]
 
 [[package]]
+name = "onerom-gen"
+version = "0.1.0"
+dependencies = [
+ "onerom-config",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "onerom-wasm"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
  "log",
  "onerom-config",
+ "onerom-gen",
  "sdrr-fw-parser",
  "serde",
  "serde-wasm-bindgen",
+ "serde_json",
  "tsify",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -373,9 +382,7 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
 name = "sdrr-fw-parser"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70e40caa1b95b92416a3c18ee3e93198f319200d71d7672b307425ede4e3c485"
+version = "0.5.1"
 dependencies = [
  "airfrog-rpc",
  "deku",

@@ -52,3 +52,12 @@ td {
 .hoverable:hover .info-icon {
     color: var(--one-rom-gold);
 }
+
+.config-description * {
+    font-family: inherit;
+}
+
+.config-description {
+    max-height: 600px;
+    overflow-y: auto;
+}
