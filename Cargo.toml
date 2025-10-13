@@ -15,9 +15,9 @@ name = "onerom_wasm"
 path = "src/lib.rs"
 
 [dependencies]
-onerom-config = { path = "../software-defined-retro-rom/rust/config", version = "0.1.2" }
-onerom-gen = { path = "../software-defined-retro-rom/rust/gen", version = "0.1.0" }
-sdrr-fw-parser = { path = "../software-defined-retro-rom/rust/sdrr-fw-parser", version = "0.5.1", default-features = false }
+onerom-config = { version = "0.1.2" }
+onerom-gen = { version = "0.1.0" }
+sdrr-fw-parser = { version = "0.5.1", default-features = false }
 
 console_error_panic_hook = "0.1"
 console_log = "1.0"
