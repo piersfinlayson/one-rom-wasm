@@ -1,12 +1,18 @@
 {
     "version": 1,
     "description": "Contains stock ROMs for a C64, without DesTestMAX (as that requires accepting a licence)",
+    "categories": [
+        "computer",
+        "firmware",
+        "commodore",
+        "c64"
+    ],
     "rom_sets": [
         {
             "type": "single",
             "roms": [
                 {
-                    "description": "8KB Kernal ROM, 901227-03",
+                    "description": "C64 8KB Kernal ROM, 901227-03",
                     "file": "https://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/kernal.901227-03.bin",
                     "type": "2364",
                     "cs1": "active_low"
@@ -17,7 +23,7 @@
             "type": "single",
             "roms": [
                 {
-                    "description": "8KB Basic ROM, 901226-01",
+                    "description": "C64 8KB Basic ROM, 901226-01",
                     "file": "https://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/basic.901226-01.bin",
                     "type": "2364",
                     "cs1": "active_low"
@@ -28,7 +34,7 @@
             "type": "single",
             "roms": [
                 {
-                    "description": "4KB Character ROM, 901225-01",
+                    "description": "C64 4KB Character ROM, 901225-01",
                     "file": "https://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/characters.901225-01.bin",
                     "type": "2332",
                     "cs1": "active_low",
@@ -40,7 +46,7 @@
             "type": "single",
             "roms": [
                 {
-                    "description": "8KB Dead Test Kernal ($E000) ROM, 781220",
+                    "description": "C64 8KB Dead Test Kernal ($E000) ROM, 781220",
                     "file": "https://www.zimmers.net/anonftp/pub/cbm/firmware/misc/c64diag/c64_diag-rev781220-pn314139-03.zip",
                     "extract": "Diag_DeadTest/dead test.BIN",
                     "type": "2364",

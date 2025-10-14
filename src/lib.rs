@@ -2,7 +2,7 @@
 //
 // MIT License
 
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
@@ -507,6 +507,36 @@ pub fn gen_file_specs(builder: &WasmGenBuilder) -> Vec<WasmFileSpec> {
         .collect()
 }
 
+/// License
+#[derive(Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct WasmLicense {
+    pub id: usize,
+    pub file_id: usize,
+    pub url: String,
+}
+
+/// Get the list of licenses that must be validated from the builder
+#[wasm_bindgen]
+pub fn gen_licenses(builder: &mut WasmGenBuilder) -> Vec<WasmLicense> {
+    builder.0.licenses()
+        .into_iter()
+        .map(|license| WasmLicense {
+            id: license.id,
+            file_id: license.file_id,
+            url: license.url,
+        })
+        .collect()
+}
+
+/// Accept a license for a specific file ID
+#[wasm_bindgen]
+pub fn accept_license(builder: &mut WasmGenBuilder, license: WasmLicense) -> Result<(), String> {
+    let license = onerom_gen::License::new(license.id, license.file_id, license.url.clone());
+    builder.0.accept_license(&license)
+        .map_err(|e| format!("Error accepting license: {e:?}"))
+}
+
 /// Add a retrieved file to the builder
 #[wasm_bindgen]
 pub fn gen_add_file(builder: &mut WasmGenBuilder, id: usize, data: Vec<u8>) -> Result<(), String> {
@@ -531,4 +561,26 @@ pub fn gen_build(builder: &WasmGenBuilder, properties: JsValue) -> Result<WasmIm
     builder.0.build(props)
         .map(|(firmware_image, metadata_json)| WasmImages(firmware_image, metadata_json))
         .map_err(|e| format!("Error building firmware image: {e:?}"))
+}
+
+/// Retrieve the config description from the builder
+#[wasm_bindgen]
+pub fn gen_description(builder: &WasmGenBuilder) -> String {
+    builder.0.description()
+}
+
+/// Retrieve any categories
+#[wasm_bindgen]
+pub fn gen_categories(builder: &WasmGenBuilder) -> Vec<String> {
+    builder.0.categories()
+}
+
+/// Check whether ready to build
+#[wasm_bindgen]
+pub fn gen_build_validation(builder: &WasmGenBuilder, properties: JsValue) -> Result<(), String> {
+    let props: FirmwareProperties = serde_wasm_bindgen::from_value(properties)
+        .map_err(|e| format!("Error deserializing properties: {}", e))?;
+
+    builder.0.build_validation(&props)
+        .map_err(|e| format!("Not ready to build: {e:?}"))
 }
