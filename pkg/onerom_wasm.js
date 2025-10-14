@@ -475,6 +475,32 @@ export function gen_file_specs(builder) {
 }
 
 /**
+ * Get the list of licenses that must be validated from the builder
+ * @param {WasmGenBuilder} builder
+ * @returns {WasmLicense[]}
+ */
+export function gen_licenses(builder) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.gen_licenses(builder.__wbg_ptr);
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
+}
+
+/**
+ * Accept a license for a specific file ID
+ * @param {WasmGenBuilder} builder
+ * @param {WasmLicense} license
+ */
+export function accept_license(builder, license) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.accept_license(builder.__wbg_ptr, license);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
+    }
+}
+
+/**
  * Add a retrieved file to the builder
  * @param {WasmGenBuilder} builder
  * @param {number} id
@@ -512,12 +538,57 @@ export function gen_build(builder, properties) {
     return WasmImages.__wrap(ret[0]);
 }
 
-function __wbg_adapter_6(arg0, arg1, arg2) {
-    wasm.closure69_externref_shim(arg0, arg1, arg2);
+/**
+ * Retrieve the config description from the builder
+ * @param {WasmGenBuilder} builder
+ * @returns {string}
+ */
+export function gen_description(builder) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        _assertClass(builder, WasmGenBuilder);
+        const ret = wasm.gen_description(builder.__wbg_ptr);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
 }
 
-function __wbg_adapter_92(arg0, arg1, arg2, arg3) {
-    wasm.closure152_externref_shim(arg0, arg1, arg2, arg3);
+/**
+ * Retrieve any categories
+ * @param {WasmGenBuilder} builder
+ * @returns {string[]}
+ */
+export function gen_categories(builder) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.gen_categories(builder.__wbg_ptr);
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
+}
+
+/**
+ * Check whether ready to build
+ * @param {WasmGenBuilder} builder
+ * @param {any} properties
+ */
+export function gen_build_validation(builder, properties) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.gen_build_validation(builder.__wbg_ptr, properties);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
+    }
+}
+
+function __wbg_adapter_12(arg0, arg1, arg2) {
+    wasm.closure75_externref_shim(arg0, arg1, arg2);
+}
+
+function __wbg_adapter_97(arg0, arg1, arg2, arg3) {
+    wasm.closure162_externref_shim(arg0, arg1, arg2, arg3);
 }
 
 const ValuePrettyPairFinalization = (typeof FinalizationRegistry === 'undefined')
@@ -904,7 +975,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wbg_adapter_92(a, state0.b, arg0, arg1);
+                    return __wbg_adapter_97(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -981,6 +1052,12 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_warn_e2ada06313f92f09 = function(arg0) {
         console.warn(arg0);
     };
+    imports.wbg.__wbg_wbindgenbigintgetasi64_ac743ece6ab9bba1 = function(arg0, arg1) {
+        const v = arg1;
+        const ret = typeof(v) === 'bigint' ? v : undefined;
+        getDataViewMemory0().setBigInt64(arg0 + 8 * 1, isLikeNone(ret) ? BigInt(0) : ret, true);
+        getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
+    };
     imports.wbg.__wbg_wbindgenbooleanget_3fe6f642c7d97746 = function(arg0) {
         const v = arg0;
         const ret = typeof(v) === 'boolean' ? v : undefined;
@@ -1006,6 +1083,10 @@ function __wbg_get_imports() {
         const ret = arg0 in arg1;
         return ret;
     };
+    imports.wbg.__wbg_wbindgenisbigint_ecb90cc08a5a9154 = function(arg0) {
+        const ret = typeof(arg0) === 'bigint';
+        return ret;
+    };
     imports.wbg.__wbg_wbindgenisfunction_8cee7dce3725ae74 = function(arg0) {
         const ret = typeof(arg0) === 'function';
         return ret;
@@ -1021,6 +1102,10 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbg_wbindgenisundefined_c4b71d073b92f3c5 = function(arg0) {
         const ret = arg0 === undefined;
+        return ret;
+    };
+    imports.wbg.__wbg_wbindgenjsvaleq_e6f2ad59ccae1b58 = function(arg0, arg1) {
+        const ret = arg0 === arg1;
         return ret;
     };
     imports.wbg.__wbg_wbindgenjsvallooseeq_9bec8c9be826bed1 = function(arg0, arg1) {
@@ -1054,14 +1139,14 @@ function __wbg_get_imports() {
         const ret = BigInt.asUintN(64, arg0);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_644fd6eb3bcf11b4 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 68, function: Function { arguments: [Externref], shim_idx: 69, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 68, __wbg_adapter_6);
-        return ret;
-    };
     imports.wbg.__wbindgen_cast_d6cd19b81560fd6e = function(arg0) {
         // Cast intrinsic for `F64 -> Externref`.
         const ret = arg0;
+        return ret;
+    };
+    imports.wbg.__wbindgen_cast_f0a5e38f680b03c2 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 74, function: Function { arguments: [Externref], shim_idx: 75, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, 74, __wbg_adapter_12);
         return ret;
     };
     imports.wbg.__wbindgen_init_externref_table = function() {

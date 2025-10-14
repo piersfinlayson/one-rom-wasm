@@ -1,4 +1,4 @@
-import init, { versions, gen_builder_from_json, gen_file_specs, gen_add_file, gen_build, mcu_flash_base, board_info, boards_for_mcu_family, mcus_for_mcu_family, mcu_chip_id } from '../pkg/onerom_wasm.js';
+import init, { versions, gen_builder_from_json, gen_description, gen_file_specs, gen_add_file, gen_build, gen_build_validation, gen_licenses, mcu_flash_base, board_info, boards_for_mcu_family, mcus_for_mcu_family, mcu_chip_id } from '../pkg/onerom_wasm.js';
 import JSZip from 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm';
 
 await init();
@@ -19,8 +19,8 @@ const parseBtn = document.getElementById('parseBtn');
 const modelDropdown = document.getElementById('oneromModel');
 const boardDropdown = document.getElementById('oneromBoard');
 const mcuDropdown = document.getElementById('oneromMcu');
-const fileContainer = document.getElementById('fileContainer');
-const fileSection = document.getElementById('fileSection');
+const descContainer = document.getElementById('descContainer');
+const descSection = document.getElementById('descSection');
 const metadataContainer = document.getElementById('metadataContainer');
 const metadataSection = document.getElementById('metadataSection');
 const imageDataContainer = document.getElementById('imageDataContainer');
@@ -123,8 +123,8 @@ function createRow(label, value) {
 }
 
 function clearPreviousResults() {
-    fileContainer.style.display = 'none';
-    fileSection.innerHTML = '';
+    descContainer.style.display = 'none';
+    descSection.innerHTML = '';
     metadataContainer.style.display = 'none';
     metadataSection.innerHTML = '';
     imageDataContainer.style.display = 'none';
@@ -150,6 +150,7 @@ parseBtn.addEventListener('click', async () => {
     const firmwareProperties = {
         version: { major: 0, minor: 5, patch: 1, build: 0 },
         board: boardType,
+        mcu_variant: mcuDropdown.value,
         serve_alg: "default",
         boot_logging: true
     };
@@ -172,33 +173,24 @@ parseBtn.addEventListener('click', async () => {
     try {
         updateStatus("Parsing config...");
 
+        // Create a new builder from the JSON configuration - this parses the
+        // configuration and throw an error if invalid
         let builder = gen_builder_from_json(configText);
 
+        // Get the config description from the builder and display it
+        const description = gen_description(builder);
+        descContainer.style.display = 'block';
+        descSection.innerHTML = description;
+
+        // Check for licenses - currently we do not support accepting licenses
+        const license = gen_licenses(builder);
+        if (license.length > 0) {
+            throw new Error("License acceptance required - currently unsupported");
+        }
+
+        // Download and add all required files to the builder
+        updateStatus("Downloading source files...");
         const fileSpecs = gen_file_specs(builder);
-
-        const html = fileSpecs.map(spec => {
-            const rows = [
-                createRow('Set ID', spec.set_id),
-                createRow('Set Type', spec.set_type),
-                spec.set_description ? createRow('Set Description', spec.set_description) : '',
-                createRow('ROM ID', spec.id),
-                spec.description ? createRow('Description', spec.description) : '',
-                createRow('ROM Type', spec.rom_type),
-                createRow('Source File', spec.source),
-                spec.extract ? createRow('Extract', spec.extract) : '',
-                spec.cs1 ? createRow('Chip Select 1', spec.cs1) : '',
-                spec.cs2 ? createRow('Chip Select 2', spec.cs2) : '',
-                spec.cs3 ? createRow('Chip Select 3', spec.cs3) : '',
-                spec.size_handling === 'default' ? '' : createRow('Size Handling', spec.size_handling),
-                createRow('ROM Size', `${spec.rom_size} bytes`)
-            ].filter(r => r).join('');
-
-            return `<div style="margin-bottom: 20px;">${rows}</div>`;
-        }).join('<hr><p></p>');
-
-        fileContainer.style.display = 'block';
-        fileSection.innerHTML = html;
-
         for (const spec of fileSpecs) {
             let url = spec.source;
 
@@ -239,6 +231,10 @@ parseBtn.addEventListener('click', async () => {
                 throw e;
             }
         }
+
+        // Check whether ready to build
+        updateStatus("Final validation...");
+        gen_build_validation(builder, firmwareProperties);
 
         // Build the firmware and get the resulting data arrays
         updateStatus("Building metadata...");

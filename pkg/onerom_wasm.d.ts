@@ -69,6 +69,14 @@ export function gen_builder_from_json(config_json: string): WasmGenBuilder;
  */
 export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
 /**
+ * Get the list of licenses that must be validated from the builder
+ */
+export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
+/**
+ * Accept a license for a specific file ID
+ */
+export function accept_license(builder: WasmGenBuilder, license: WasmLicense): void;
+/**
  * Add a retrieved file to the builder
  */
 export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
@@ -83,6 +91,18 @@ export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Arr
  * }
  */
 export function gen_build(builder: WasmGenBuilder, properties: any): WasmImages;
+/**
+ * Retrieve the config description from the builder
+ */
+export function gen_description(builder: WasmGenBuilder): string;
+/**
+ * Retrieve any categories
+ */
+export function gen_categories(builder: WasmGenBuilder): string[];
+/**
+ * Check whether ready to build
+ */
+export function gen_build_validation(builder: WasmGenBuilder, properties: any): void;
 /**
  * Basic MCU information structure
  */
@@ -190,6 +210,15 @@ export interface WasmFileSpec {
     set_description: string | undefined;
 }
 
+/**
+ * License
+ */
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
+}
+
 export class ValuePrettyPair {
   private constructor();
   free(): void;
@@ -262,8 +291,13 @@ export interface InitOutput {
   readonly wasmimages_firmware_images: (a: number) => [number, number];
   readonly gen_builder_from_json: (a: number, b: number) => [number, number, number];
   readonly gen_file_specs: (a: number) => [number, number];
+  readonly gen_licenses: (a: number) => [number, number];
+  readonly accept_license: (a: number, b: any) => [number, number];
   readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
   readonly gen_build: (a: number, b: any) => [number, number, number];
+  readonly gen_description: (a: number) => [number, number];
+  readonly gen_categories: (a: number) => [number, number];
+  readonly gen_build_validation: (a: number, b: any) => [number, number];
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_exn_store: (a: number) => void;
@@ -273,8 +307,8 @@ export interface InitOutput {
   readonly __wbindgen_export_6: WebAssembly.Table;
   readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __externref_table_dealloc: (a: number) => void;
-  readonly closure69_externref_shim: (a: number, b: number, c: any) => void;
-  readonly closure152_externref_shim: (a: number, b: number, c: any, d: any) => void;
+  readonly closure75_externref_shim: (a: number, b: number, c: any) => void;
+  readonly closure162_externref_shim: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_start: () => void;
 }
 
