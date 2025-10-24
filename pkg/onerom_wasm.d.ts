@@ -130,6 +130,7 @@ export interface RomTypeInfo {
     data_pins: DataPin[];
     control_lines: ControlLine[];
     programming_pins: ProgrammingPin[] | undefined;
+    power_pins: PowerPin[];
 }
 
 /**
@@ -164,6 +165,14 @@ export interface ProgrammingPin {
     name: string;
     pin: number;
     read_state: string;
+}
+
+/**
+ * Power pin mapping
+ */
+export interface PowerPin {
+    name: string;
+    pin: number;
 }
 
 /**
