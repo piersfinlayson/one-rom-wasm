@@ -161,6 +161,7 @@ pub struct RomTypeInfo {
     data_pins: Vec<DataPin>,
     control_lines: Vec<ControlLine>,
     programming_pins: Option<Vec<ProgrammingPin>>,
+    power_pins: Vec<PowerPin>,
 }
 
 /// Address pin mapping
@@ -197,6 +198,13 @@ pub struct ProgrammingPin {
     read_state: String,  // "Vcc", "High", "Low", "ChipSelect"
 }
 
+/// Power pin mapping
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct PowerPin {
+    name: String,
+    pin: u8,
+}
 /// Return a list of supported ROM types
 #[wasm_bindgen]
 pub fn rom_types() -> Vec<String> {
@@ -248,6 +256,14 @@ pub fn rom_type_info(name: String) -> Result<RomTypeInfo, JsValue> {
             .collect()
     });
 
+    let power_pins = rom_type.power_pins()
+        .iter()
+        .map(|p| PowerPin {
+            name: p.name.to_string(),
+            pin: p.pin,
+        })
+        .collect();
+
     let info = RomTypeInfo {
         name: rom_type.name().to_string(),
         size_bytes: rom_type.size_bytes(),
@@ -257,6 +273,7 @@ pub fn rom_type_info(name: String) -> Result<RomTypeInfo, JsValue> {
         data_pins,
         control_lines,
         programming_pins,
+        power_pins,
     };
 
     Ok(info)
