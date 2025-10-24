@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>One ROM Firmware Generator</title>
+    <link rel="stylesheet" href="https://onerom.org/style.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="https://onerom.org/images/favicon.png">
+</head>
+<body>
+    <div class="app">
+        <h1>One R<span class="o-in-rom">O</span>M Metadata Generator</h1>
+
+        <p>
+            <strong style="color: var(--one-rom-gold)">⚠️   Work in progress - use at your own risk</strong>
+        </p>
+        <p>
+            This metadata generator allows you to create One ROM metadata and ROM images files to be flashed to your One ROM device.  This is helpful when your One ROM Pro is installed with just the firmware, but not metadata or ROM images - the status LED will be slowly blinking in this state.
+        </p>
+        <p>
+            To use, select your One ROM hardware type from the drop-downs below, paste in a JSON format ROM configuration, and press "Generate Metadata".  You can then download the generated metadata and ROM image files, and flash them to your One ROM device using the probe-rs commands shown.
+        </p>
+
+        <hr>
+
+        <h3>
+            Version info:
+        </h3>
+        <div class="info-row">
+            <span class="info-label">Metadata version:</span>
+            <span id="metadataVersion"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">onerom-wasm:</span>
+            <span id="wasmVersion"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">onerom-config:</span>
+            <span id="configVersion"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">onerom-gen:</span>
+            <span id="genVersion"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">sdrr-fw-parser:</span>
+            <span id="parserVersion"></span>
+        </div>
+
+        <hr>
+
+        <div>
+            <h3>One ROM Config</h3>
+            <div class="entry-boxes">
+                <div>
+                    <select id="oneromModel">
+                        <option value="">Select Model</option>
+                        <option value="rp2350">Fire</option>
+                        <option value="stm32f4">Ice</option>
+                    </select>
+                    <select id="oneromBoard"><option value="">...</option></select>
+                    <select id="oneromMcu"><option value="">...</option></select>
+                </div>
+            </div>
+
+            <textarea id="configInput" placeholder="Enter your One ROM runtime JSON configuration here..." rows="20" cols="80"  class="config-description" style="display: block;"></textarea>
+            <p></p>
+            <button class="gold-button" id="parseBtn" disabled>Generate Metadata</button>
+        </div>
+
+        <hr>
+
+        <div>
+            <h3>Status:</h3>
+            <p><span id="status">Select One ROM Model, Board and MCU</span></p>
+        </div>
+
+        <div id="flashingContainer" style="display: none;">
+            <hr>
+            <h3>Flashing</h3>
+            <p><span id="flashingSection" class="config-description" style="display: block"></span></p>
+        </div>
+
+        <div id="descContainer" style="display: none;">
+            <hr>
+            <h3>Config Description</h3>
+            <div id="descSection" class="config-description" style="display: block;"></div>
+        </div>
+
+        <div id="metadataContainer" style="display: none;">
+            <hr>
+            <h3>Metadata</h3>
+            <button id="downloadMetadata" class="gold-button">Download Metadata</button>
+            <div id="metadataSection" class="config-description" style="display: block;"></div>
+        </div>
+
+        <div id="imageDataContainer" style="display: none;">
+            <hr>
+            <h3>Image Data</h3>
+            <button id="downloadImageData" class="gold-button">Download Image Data</button>
+            <div id="imageDataSection" class="config-description" style="display: block;"></div>
+        </div>
+
+        <div id="footer"></div>
+        <script src="js/footer.js" type="module"></script>
+    </div>
+
+    <script type="module" src="js/gen.js"></script>
+</body>
+</html>
