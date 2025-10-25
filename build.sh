@@ -12,7 +12,7 @@ echo "Documentation generated in docs/"
 
 # Prepare deployment directory
 mkdir -p deploy
-cp LICENSE.md 404.html footer.html index.html gen.html visualizer.html style.css deploy/
+cp LICENSE.md 404.html footer.html index.html gen.html style.css deploy/
 cp -r pkg docs js deploy/
 rm -f deploy/pkg/.gitignore
 
