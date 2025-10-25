@@ -5,7 +5,7 @@
     "Piers Finlayson <piers@piers.rocks>"
   ],
   "description": "One ROM Supporting Tooling Web Assembly Implementation",
-  "version": "0.1.5-dev+5ea6ef3",
+  "version": "0.1.5-dev+eba2611",
   "license": "MIT",
   "repository": {
     "type": "git",
