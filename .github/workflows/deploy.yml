@@ -73,7 +73,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           source scripts/html-utils.sh
-          generate_index "gh-pages-branch/releases" "Releases"
+          generate_index "gh-pages-branch/releases" "One ROM Releases"
           mkdir -p releases-listing/releases
           mv gh-pages-branch/releases/index.html releases-listing/releases/
 
