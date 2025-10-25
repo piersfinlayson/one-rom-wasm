@@ -588,7 +588,7 @@ function __wbg_adapter_6(arg0, arg1, arg2) {
 }
 
 function __wbg_adapter_97(arg0, arg1, arg2, arg3) {
-    wasm.closure164_externref_shim(arg0, arg1, arg2, arg3);
+    wasm.closure166_externref_shim(arg0, arg1, arg2, arg3);
 }
 
 const ValuePrettyPairFinalization = (typeof FinalizationRegistry === 'undefined')
