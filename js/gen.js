@@ -198,8 +198,6 @@ parseBtn.addEventListener('click', async () => {
                 throw new Error(`Source must be HTTP(S) URL: ${url}`);
             }
 
-            url = url.replace(/^https?:\/\/(www\.)?zimmers\.net\//, 'https://github-cors.piers.rocks/zimmers/');
-
             updateStatus(`Downloading ${spec.source}...`);
 
             const controller = new AbortController();

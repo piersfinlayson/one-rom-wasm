@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.5 - ??
+
+Removed using cors for zimmers.net, as suitable CORS headers are now set.
+
 ## v0.1.4 - 2025-10-24
 
 Pull in latest onerom crates, so can decode firmware 0.5.3
