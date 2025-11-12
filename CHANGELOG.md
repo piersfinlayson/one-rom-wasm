@@ -1,8 +1,13 @@
 # Changelog
 
-## v0.1.5 - ??
+## v0.1.6 - 2025-??-??
+
+
+
+## v0.1.5 - 2025-11-05
 
 Removed using cors for zimmers.net, as suitable CORS headers are now set.
+Moved to latest onerom crates.
 
 ## v0.1.4 - 2025-10-24
 
