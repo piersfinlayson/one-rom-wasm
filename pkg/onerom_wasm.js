@@ -214,6 +214,32 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     return real;
 }
 
+function takeFromExternrefTable0(idx) {
+    const value = wasm.__wbindgen_externrefs.get(idx);
+    wasm.__externref_table_dealloc(idx);
+    return value;
+}
+/**
+ * Return detailed information about a specific PCB/Board
+ * @param {string} name
+ * @returns {BoardInfo}
+ */
+export function board_info(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.board_info(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
+}
+
+function _assertClass(instance, klass) {
+    if (!(instance instanceof klass)) {
+        throw new Error(`expected instance of ${klass.name}`);
+    }
+}
+
 function getArrayJsValueFromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     const mem = getDataViewMemory0();
@@ -225,61 +251,80 @@ function getArrayJsValueFromWasm0(ptr, len) {
     return result;
 }
 /**
- * Return a list of supported ROM types
- * @returns {string[]}
+ * Get the list of file specifications from the builder
+ * @param {WasmGenBuilder} builder
+ * @returns {WasmFileSpec[]}
  */
-export function rom_types() {
-    const ret = wasm.rom_types();
+export function gen_file_specs(builder) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.gen_file_specs(builder.__wbg_ptr);
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
 }
 
-function takeFromExternrefTable0(idx) {
-    const value = wasm.__wbindgen_externrefs.get(idx);
-    wasm.__externref_table_dealloc(idx);
-    return value;
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8ArrayMemory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
 }
 /**
- * Create a GenBuilder from a JSON configuration string
- * @param {string} config_json
- * @returns {WasmGenBuilder}
+ * Parse a firmware image and return the extracted information as a JSON
+ * object.  Either pass in:
+ * - A complete .bin file
+ * - The first 64KB of a flash dump
+ * - The device's entire flash dump
+ * @param {Uint8Array} data
+ * @returns {Promise<any>}
  */
-export function gen_builder_from_json(config_json) {
-    const ptr0 = passStringToWasm0(config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function parse_firmware(data) {
+    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.gen_builder_from_json(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return WasmGenBuilder.__wrap(ret[0]);
+    const ret = wasm.parse_firmware(ptr0, len0);
+    return ret;
 }
 
-function _assertClass(instance, klass) {
-    if (!(instance instanceof klass)) {
-        throw new Error(`expected instance of ${klass.name}`);
-    }
-}
 /**
- * Build the firmware image from the builder and properties.
- * Properties should be a JS object with shape:
- * {
- *   version: {major: u16, minor: u16, patch: u16, build: u16},
- *   board: string,
- *   serve_alg: string,
- *   boot_logging: bool
- * }
+ * Retrieve any categories
+ * @param {WasmGenBuilder} builder
+ * @returns {string[]}
+ */
+export function gen_categories(builder) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.gen_categories(builder.__wbg_ptr);
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
+}
+
+/**
+ * Check whether ready to build
  * @param {WasmGenBuilder} builder
  * @param {any} properties
- * @returns {WasmImages}
  */
-export function gen_build(builder, properties) {
+export function gen_build_validation(builder, properties) {
     _assertClass(builder, WasmGenBuilder);
-    const ret = wasm.gen_build(builder.__wbg_ptr, properties);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
+    const ret = wasm.gen_build_validation(builder.__wbg_ptr, properties);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
     }
-    return WasmImages.__wrap(ret[0]);
+}
+
+/**
+ * Add a retrieved file to the builder
+ * @param {WasmGenBuilder} builder
+ * @param {number} id
+ * @param {Uint8Array} data
+ */
+export function gen_add_file(builder, id, data) {
+    _assertClass(builder, WasmGenBuilder);
+    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.gen_add_file(builder.__wbg_ptr, id, ptr0, len0);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
+    }
 }
 
 /**
@@ -300,10 +345,18 @@ export function mcus_for_mcu_family(family_name) {
 }
 
 /**
- * Initialize logging and panic hook
+ * Return detailed information about a specific MCU
+ * @param {string} name
+ * @returns {McuInfo}
  */
-export function init() {
-    wasm.init();
+export function mcu_info(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.mcu_info(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
 }
 
 /**
@@ -332,127 +385,85 @@ export function mcu_chip_id(variant_name) {
     }
 }
 
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1, 1) >>> 0;
-    getUint8ArrayMemory0().set(arg, ptr / 1);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
 /**
- * Add a retrieved file to the builder
+ * Get the list of licenses that must be validated from the builder
  * @param {WasmGenBuilder} builder
- * @param {number} id
- * @param {Uint8Array} data
+ * @returns {WasmLicense[]}
  */
-export function gen_add_file(builder, id, data) {
+export function gen_licenses(builder) {
     _assertClass(builder, WasmGenBuilder);
-    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.gen_add_file(builder.__wbg_ptr, id, ptr0, len0);
-    if (ret[1]) {
-        throw takeFromExternrefTable0(ret[0]);
-    }
-}
-
-/**
- * Retrieve any categories
- * @param {WasmGenBuilder} builder
- * @returns {string[]}
- */
-export function gen_categories(builder) {
-    _assertClass(builder, WasmGenBuilder);
-    const ret = wasm.gen_categories(builder.__wbg_ptr);
+    const ret = wasm.gen_licenses(builder.__wbg_ptr);
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
 }
 
 /**
- * Return detailed information about a specific PCB/Board
- * @param {string} name
- * @returns {BoardInfo}
- */
-export function board_info(name) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.board_info(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return takeFromExternrefTable0(ret[0]);
-}
-
-/**
- * Return the flash base address for a specific MCU family
- * @param {string} name
- * @returns {number}
- */
-export function mcu_flash_base(name) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.mcu_flash_base(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return ret[0] >>> 0;
-}
-
-/**
- * Accept a license for a specific file ID
- * @param {WasmGenBuilder} builder
- * @param {WasmLicense} license
- */
-export function accept_license(builder, license) {
-    _assertClass(builder, WasmGenBuilder);
-    const ret = wasm.accept_license(builder.__wbg_ptr, license);
-    if (ret[1]) {
-        throw takeFromExternrefTable0(ret[0]);
-    }
-}
-
-/**
- * Return detailed information about a specific MCU
- * @param {string} name
- * @returns {McuInfo}
- */
-export function mcu_info(name) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.mcu_info(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return takeFromExternrefTable0(ret[0]);
-}
-
-/**
- * WASM Library Version
- * @returns {string}
- */
-export function version() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.version();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
-}
-
-/**
- * Check whether ready to build
+ * Build the firmware image from the builder and properties.
+ * Properties should be a JS object with shape:
+ * {
+ *   version: {major: u16, minor: u16, patch: u16, build: u16},
+ *   board: string,
+ *   serve_alg: string,
+ *   boot_logging: bool
+ * }
  * @param {WasmGenBuilder} builder
  * @param {any} properties
+ * @returns {WasmImages}
  */
-export function gen_build_validation(builder, properties) {
+export function gen_build(builder, properties) {
     _assertClass(builder, WasmGenBuilder);
-    const ret = wasm.gen_build_validation(builder.__wbg_ptr, properties);
-    if (ret[1]) {
-        throw takeFromExternrefTable0(ret[0]);
+    const ret = wasm.gen_build(builder.__wbg_ptr, properties);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
     }
+    return WasmImages.__wrap(ret[0]);
+}
+
+/**
+ * Initialize logging and panic hook
+ */
+export function init() {
+    wasm.init();
+}
+
+/**
+ * Create a GenBuilder from a JSON configuration string
+ * @param {string} config_json
+ * @returns {WasmGenBuilder}
+ */
+export function gen_builder_from_json(config_json) {
+    const ptr0 = passStringToWasm0(config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.gen_builder_from_json(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return WasmGenBuilder.__wrap(ret[0]);
+}
+
+/**
+ * Get version information for the various components
+ * @returns {VersionInfo}
+ */
+export function versions() {
+    const ret = wasm.versions();
+    return VersionInfo.__wrap(ret);
+}
+
+/**
+ * Return detailed information about a specific ROM type
+ * @param {string} name
+ * @returns {RomTypeInfo}
+ */
+export function rom_type_info(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.rom_type_info(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
 }
 
 /**
@@ -473,50 +484,6 @@ export function boards_for_mcu_family(family_name) {
 }
 
 /**
- * Parse a firmware image and return the extracted information as a JSON
- * object.  Either pass in:
- * - A complete .bin file
- * - The first 64KB of a flash dump
- * - The device's entire flash dump
- * @param {Uint8Array} data
- * @returns {Promise<any>}
- */
-export function parse_firmware(data) {
-    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.parse_firmware(ptr0, len0);
-    return ret;
-}
-
-/**
- * Get the list of licenses that must be validated from the builder
- * @param {WasmGenBuilder} builder
- * @returns {WasmLicense[]}
- */
-export function gen_licenses(builder) {
-    _assertClass(builder, WasmGenBuilder);
-    const ret = wasm.gen_licenses(builder.__wbg_ptr);
-    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
-    return v1;
-}
-
-/**
- * Return detailed information about a specific ROM type
- * @param {string} name
- * @returns {RomTypeInfo}
- */
-export function rom_type_info(name) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.rom_type_info(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return takeFromExternrefTable0(ret[0]);
-}
-
-/**
  * Return a list of supported PCBs/Boards
  * @returns {string[]}
  */
@@ -528,6 +495,23 @@ export function boards() {
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
+}
+
+/**
+ * WASM Library Version
+ * @returns {string}
+ */
+export function version() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.version();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
 }
 
 /**
@@ -550,6 +534,21 @@ export function gen_description(builder) {
 }
 
 /**
+ * Return the flash base address for a specific MCU family
+ * @param {string} name
+ * @returns {number}
+ */
+export function mcu_flash_base(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.mcu_flash_base(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return ret[0] >>> 0;
+}
+
+/**
  * Return a list of supported MCUs
  * @returns {string[]}
  */
@@ -561,33 +560,35 @@ export function mcus() {
 }
 
 /**
- * Get version information for the various components
- * @returns {VersionInfo}
+ * Return a list of supported ROM types
+ * @returns {string[]}
  */
-export function versions() {
-    const ret = wasm.versions();
-    return VersionInfo.__wrap(ret);
-}
-
-/**
- * Get the list of file specifications from the builder
- * @param {WasmGenBuilder} builder
- * @returns {WasmFileSpec[]}
- */
-export function gen_file_specs(builder) {
-    _assertClass(builder, WasmGenBuilder);
-    const ret = wasm.gen_file_specs(builder.__wbg_ptr);
+export function rom_types() {
+    const ret = wasm.rom_types();
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
 }
 
-function wasm_bindgen__convert__closures_____invoke__h01208759846829b6(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h01208759846829b6(arg0, arg1, arg2);
+/**
+ * Accept a license for a specific file ID
+ * @param {WasmGenBuilder} builder
+ * @param {WasmLicense} license
+ */
+export function accept_license(builder, license) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.accept_license(builder.__wbg_ptr, license);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
+    }
 }
 
-function wasm_bindgen__convert__closures_____invoke__h1518d5956c1b7432(arg0, arg1, arg2, arg3) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h1518d5956c1b7432(arg0, arg1, arg2, arg3);
+function wasm_bindgen__convert__closures_____invoke__h62b08efba5b8ccbc(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h62b08efba5b8ccbc(arg0, arg1, arg2);
+}
+
+function wasm_bindgen__convert__closures_____invoke__h0b1e7be60adc2140(arg0, arg1, arg2, arg3) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h0b1e7be60adc2140(arg0, arg1, arg2, arg3);
 }
 
 const ValuePrettyPairFinalization = (typeof FinalizationRegistry === 'undefined')
@@ -1041,7 +1042,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return wasm_bindgen__convert__closures_____invoke__h1518d5956c1b7432(a, state0.b, arg0, arg1);
+                    return wasm_bindgen__convert__closures_____invoke__h0b1e7be60adc2140(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -1124,7 +1125,7 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbindgen_cast_151ffb1b798ab8ff = function(arg0, arg1) {
         // Cast intrinsic for `Closure(Closure { dtor_idx: 76, function: Function { arguments: [Externref], shim_idx: 77, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h2d7a692b2200149a, wasm_bindgen__convert__closures_____invoke__h01208759846829b6);
+        const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h03d91b42a8362058, wasm_bindgen__convert__closures_____invoke__h62b08efba5b8ccbc);
         return ret;
     };
     imports.wbg.__wbindgen_cast_2241b6af4c4b2941 = function(arg0, arg1) {
