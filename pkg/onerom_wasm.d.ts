@@ -1,49 +1,29 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Return detailed information about a specific PCB/Board
+ * WASM Library Version
  */
-export function board_info(name: string): BoardInfo;
-/**
- * Get the list of file specifications from the builder
- */
-export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
-/**
- * Parse a firmware image and return the extracted information as a JSON
- * object.  Either pass in:
- * - A complete .bin file
- * - The first 64KB of a flash dump
- * - The device's entire flash dump
- */
-export function parse_firmware(data: Uint8Array): Promise<any>;
-/**
- * Retrieve any categories
- */
-export function gen_categories(builder: WasmGenBuilder): string[];
+export function version(): string;
 /**
  * Check whether ready to build
  */
 export function gen_build_validation(builder: WasmGenBuilder, properties: any): void;
 /**
- * Add a retrieved file to the builder
- */
-export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
-/**
- * Get a list of MCUs for a specific board
- */
-export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
-/**
- * Return detailed information about a specific MCU
- */
-export function mcu_info(name: string): McuInfo;
-/**
  * Get MCU variant (probe-rs) chip ID
  */
 export function mcu_chip_id(variant_name: string): string;
 /**
- * Get the list of licenses that must be validated from the builder
+ * Get version information for the various components
  */
-export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
+export function versions(): VersionInfo;
+/**
+ * Retrieve any categories
+ */
+export function gen_categories(builder: WasmGenBuilder): string[];
+/**
+ * Return the flash base address for a specific MCU family
+ */
+export function mcu_flash_base(name: string): number;
 /**
  * Build the firmware image from the builder and properties.
  * Properties should be a JS object with shape:
@@ -56,78 +36,96 @@ export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
  */
 export function gen_build(builder: WasmGenBuilder, properties: any): WasmImages;
 /**
- * Initialize logging and panic hook
- */
-export function init(): void;
-/**
  * Create a GenBuilder from a JSON configuration string
  */
 export function gen_builder_from_json(config_json: string): WasmGenBuilder;
-/**
- * Get version information for the various components
- */
-export function versions(): VersionInfo;
 /**
  * Return detailed information about a specific ROM type
  */
 export function rom_type_info(name: string): RomTypeInfo;
 /**
+ * Get the list of file specifications from the builder
+ */
+export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
+/**
+ * Return detailed information about a specific MCU
+ */
+export function mcu_info(name: string): McuInfo;
+/**
  * Get a list of boards for a specific MCU family
  */
 export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
 /**
- * Return a list of supported PCBs/Boards
+ * Initialize logging and panic hook
  */
-export function boards(): string[];
+export function init(): void;
 /**
- * WASM Library Version
+ * Get the list of licenses that must be validated from the builder
  */
-export function version(): string;
+export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
+/**
+ * Get a list of MCUs for a specific board
+ */
+export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
+/**
+ * Add a retrieved file to the builder
+ */
+export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
+/**
+ * Parse a firmware image and return the extracted information as a JSON
+ * object.  Either pass in:
+ * - A complete .bin file
+ * - The first 64KB of a flash dump
+ * - The device's entire flash dump
+ */
+export function parse_firmware(data: Uint8Array): Promise<any>;
 /**
  * Retrieve the config description from the builder
  */
 export function gen_description(builder: WasmGenBuilder): string;
 /**
- * Return the flash base address for a specific MCU family
- */
-export function mcu_flash_base(name: string): number;
-/**
- * Return a list of supported MCUs
- */
-export function mcus(): string[];
-/**
  * Return a list of supported ROM types
  */
 export function rom_types(): string[];
+/**
+ * Return detailed information about a specific PCB/Board
+ */
+export function board_info(name: string): BoardInfo;
 /**
  * Accept a license for a specific file ID
  */
 export function accept_license(builder: WasmGenBuilder, license: WasmLicense): void;
 /**
- * Specification for a file that needs to be retrieved and added to the builder
+ * Return a list of supported MCUs
  */
-export interface WasmFileSpec {
-    id: number;
-    source: string;
-    extract: string | undefined;
-    size_handling: string;
-    rom_type: string;
-    description: string | undefined;
-    rom_size: number;
-    set_id: number;
-    cs1: string | undefined;
-    cs2: string | undefined;
-    cs3: string | undefined;
-    set_type: string;
-    set_description: string | undefined;
-}
-
+export function mcus(): string[];
 /**
- * Data pin mapping
+ * Return a list of supported PCBs/Boards
  */
-export interface DataPin {
-    line: number;
-    pin: number;
+export function boards(): string[];
+/**
+ * One ROM PCB/Board information structure
+ */
+export interface BoardInfo {
+    name: string;
+    description: string;
+    mcu_family: string;
+    rom_pins: number;
+    data_pins: number[];
+    addr_pins: number[];
+    sel_pins: number[];
+    pin_status: number;
+    pin_x1: number | undefined;
+    pin_x2: number | undefined;
+    port_data: string;
+    port_addr: string;
+    port_cs: string;
+    port_sel: string;
+    port_status: string;
+    sel_jumper_pull: number;
+    x_jumper_pull: number;
+    has_usb: boolean;
+    supports_multi_rom_sets: boolean;
 }
 
 /**
@@ -155,65 +153,6 @@ export interface RomTypeInfo {
 }
 
 /**
- * One ROM PCB/Board information structure
- */
-export interface BoardInfo {
-    name: string;
-    description: string;
-    mcu_family: string;
-    rom_pins: number;
-    data_pins: number[];
-    addr_pins: number[];
-    sel_pins: number[];
-    pin_status: number;
-    pin_x1: number | undefined;
-    pin_x2: number | undefined;
-    port_data: string;
-    port_addr: string;
-    port_cs: string;
-    port_sel: string;
-    port_status: string;
-    sel_jumper_pull: number;
-    x_jumper_pull: number;
-    has_usb: boolean;
-    supports_multi_rom_sets: boolean;
-}
-
-/**
- * Address pin mapping
- */
-export interface AddressPin {
-    line: number;
-    pin: number;
-}
-
-/**
- * License
- */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
-}
-
-/**
- * Control line mapping
- */
-export interface ControlLine {
-    name: string;
-    pin: number;
-    configurable: boolean;
-}
-
-/**
- * Power pin mapping
- */
-export interface PowerPin {
-    name: string;
-    pin: number;
-}
-
-/**
  * Basic MCU information structure
  */
 export interface McuInfo {
@@ -226,6 +165,67 @@ export interface McuInfo {
     supports_usb_dfu: boolean;
     supports_banked_roms: boolean;
     supports_multi_rom_sets: boolean;
+}
+
+/**
+ * Control line mapping
+ */
+export interface ControlLine {
+    name: string;
+    pin: number;
+    configurable: boolean;
+}
+
+/**
+ * License
+ */
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
+}
+
+/**
+ * Specification for a file that needs to be retrieved and added to the builder
+ */
+export interface WasmFileSpec {
+    id: number;
+    source: string;
+    extract: string | undefined;
+    size_handling: string;
+    rom_type: string;
+    description: string | undefined;
+    rom_size: number;
+    set_id: number;
+    cs1: string | undefined;
+    cs2: string | undefined;
+    cs3: string | undefined;
+    set_type: string;
+    set_description: string | undefined;
+}
+
+/**
+ * Power pin mapping
+ */
+export interface PowerPin {
+    name: string;
+    pin: number;
+}
+
+/**
+ * Address pin mapping
+ */
+export interface AddressPin {
+    line: number;
+    pin: number;
+}
+
+/**
+ * Data pin mapping
+ */
+export interface DataPin {
+    line: number;
+    pin: number;
 }
 
 export class ValuePrettyPair {
