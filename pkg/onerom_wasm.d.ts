@@ -1,108 +1,82 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * WASM Library Version
+ * Control line mapping
  */
-export function version(): string;
+export interface ControlLine {
+    name: string;
+    pin: number;
+    configurable: boolean;
+}
+
 /**
- * Check whether ready to build
+ * Data pin mapping
  */
-export function gen_build_validation(builder: WasmGenBuilder, properties: any): void;
+export interface DataPin {
+    line: number;
+    pin: number;
+}
+
 /**
- * Get MCU variant (probe-rs) chip ID
+ * Specification for a file that needs to be retrieved and added to the builder
  */
-export function mcu_chip_id(variant_name: string): string;
+export interface WasmFileSpec {
+    id: number;
+    source: string;
+    extract: string | undefined;
+    size_handling: string;
+    rom_type: string;
+    description: string | undefined;
+    rom_size: number;
+    set_id: number;
+    cs1: string | undefined;
+    cs2: string | undefined;
+    cs3: string | undefined;
+    set_type: string;
+    set_description: string | undefined;
+}
+
 /**
- * Get version information for the various components
+ * Programming pin mapping
  */
-export function versions(): VersionInfo;
+export interface ProgrammingPin {
+    name: string;
+    pin: number;
+    read_state: string;
+}
+
 /**
- * Retrieve any categories
+ * Basic MCU information structure
  */
-export function gen_categories(builder: WasmGenBuilder): string[];
+export interface McuInfo {
+    name: string;
+    family: string;
+    flash_kb: number;
+    ram_kb: number;
+    ccm_ram_kb: number | undefined;
+    max_sysclk_mhz: number;
+    supports_usb_dfu: boolean;
+    supports_banked_roms: boolean;
+    supports_multi_rom_sets: boolean;
+}
+
 /**
- * Return the flash base address for a specific MCU family
+ * Power pin mapping
  */
-export function mcu_flash_base(name: string): number;
+export interface PowerPin {
+    name: string;
+    pin: number;
+}
+
 /**
- * Build the firmware image from the builder and properties.
- * Properties should be a JS object with shape:
- * {
- *   version: {major: u16, minor: u16, patch: u16, build: u16},
- *   board: string,
- *   serve_alg: string,
- *   boot_logging: bool
- * }
+ * License
  */
-export function gen_build(builder: WasmGenBuilder, properties: any): WasmImages;
-/**
- * Create a GenBuilder from a JSON configuration string
- */
-export function gen_builder_from_json(config_json: string): WasmGenBuilder;
-/**
- * Return detailed information about a specific ROM type
- */
-export function rom_type_info(name: string): RomTypeInfo;
-/**
- * Get the list of file specifications from the builder
- */
-export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
-/**
- * Return detailed information about a specific MCU
- */
-export function mcu_info(name: string): McuInfo;
-/**
- * Get a list of boards for a specific MCU family
- */
-export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
-/**
- * Initialize logging and panic hook
- */
-export function init(): void;
-/**
- * Get the list of licenses that must be validated from the builder
- */
-export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
-/**
- * Get a list of MCUs for a specific board
- */
-export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
-/**
- * Add a retrieved file to the builder
- */
-export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
-/**
- * Parse a firmware image and return the extracted information as a JSON
- * object.  Either pass in:
- * - A complete .bin file
- * - The first 64KB of a flash dump
- * - The device's entire flash dump
- */
-export function parse_firmware(data: Uint8Array): Promise<any>;
-/**
- * Retrieve the config description from the builder
- */
-export function gen_description(builder: WasmGenBuilder): string;
-/**
- * Return a list of supported ROM types
- */
-export function rom_types(): string[];
-/**
- * Return detailed information about a specific PCB/Board
- */
-export function board_info(name: string): BoardInfo;
-/**
- * Accept a license for a specific file ID
- */
-export function accept_license(builder: WasmGenBuilder, license: WasmLicense): void;
-/**
- * Return a list of supported MCUs
- */
-export function mcus(): string[];
-/**
- * Return a list of supported PCBs/Boards
- */
-export function boards(): string[];
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
+}
+
 /**
  * One ROM PCB/Board information structure
  */
@@ -129,12 +103,11 @@ export interface BoardInfo {
 }
 
 /**
- * Programming pin mapping
+ * Address pin mapping
  */
-export interface ProgrammingPin {
-    name: string;
+export interface AddressPin {
+    line: number;
     pin: number;
-    read_state: string;
 }
 
 /**
@@ -152,81 +125,6 @@ export interface RomTypeInfo {
     power_pins: PowerPin[];
 }
 
-/**
- * Basic MCU information structure
- */
-export interface McuInfo {
-    name: string;
-    family: string;
-    flash_kb: number;
-    ram_kb: number;
-    ccm_ram_kb: number | undefined;
-    max_sysclk_mhz: number;
-    supports_usb_dfu: boolean;
-    supports_banked_roms: boolean;
-    supports_multi_rom_sets: boolean;
-}
-
-/**
- * Control line mapping
- */
-export interface ControlLine {
-    name: string;
-    pin: number;
-    configurable: boolean;
-}
-
-/**
- * License
- */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
-}
-
-/**
- * Specification for a file that needs to be retrieved and added to the builder
- */
-export interface WasmFileSpec {
-    id: number;
-    source: string;
-    extract: string | undefined;
-    size_handling: string;
-    rom_type: string;
-    description: string | undefined;
-    rom_size: number;
-    set_id: number;
-    cs1: string | undefined;
-    cs2: string | undefined;
-    cs3: string | undefined;
-    set_type: string;
-    set_description: string | undefined;
-}
-
-/**
- * Power pin mapping
- */
-export interface PowerPin {
-    name: string;
-    pin: number;
-}
-
-/**
- * Address pin mapping
- */
-export interface AddressPin {
-    line: number;
-    pin: number;
-}
-
-/**
- * Data pin mapping
- */
-export interface DataPin {
-    line: number;
-    pin: number;
-}
 
 export class ValuePrettyPair {
   private constructor();
@@ -235,9 +133,7 @@ export class ValuePrettyPair {
   readonly value: string;
   readonly pretty: string;
 }
-/**
- * Version information for the various components
- */
+
 export class VersionInfo {
   private constructor();
   free(): void;
@@ -248,17 +144,13 @@ export class VersionInfo {
   readonly sdrr_fw_parser: string;
   readonly metadata_version: string;
 }
-/**
- * Builder for generating firmware images
- */
+
 export class WasmGenBuilder {
   private constructor();
   free(): void;
   [Symbol.dispose](): void;
 }
-/**
- * Result of building a firmware image: (firmware_image, metadata_json)
- */
+
 export class WasmImages {
   private constructor();
   free(): void;
@@ -266,6 +158,132 @@ export class WasmImages {
   readonly firmware_images: Uint8Array;
   readonly metadata: Uint8Array;
 }
+
+/**
+ * Accept a license for a specific file ID
+ */
+export function accept_license(builder: WasmGenBuilder, license: WasmLicense): void;
+
+/**
+ * Return detailed information about a specific PCB/Board
+ */
+export function board_info(name: string): BoardInfo;
+
+/**
+ * Return a list of supported PCBs/Boards
+ */
+export function boards(): string[];
+
+/**
+ * Get a list of boards for a specific MCU family
+ */
+export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
+
+/**
+ * Add a retrieved file to the builder
+ */
+export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
+
+/**
+ * Build the firmware image from the builder and properties.
+ * Properties should be a JS object with shape:
+ * {
+ *   version: {major: u16, minor: u16, patch: u16, build: u16},
+ *   board: string,
+ *   serve_alg: string,
+ *   boot_logging: bool
+ * }
+ */
+export function gen_build(builder: WasmGenBuilder, properties: any): WasmImages;
+
+/**
+ * Check whether ready to build
+ */
+export function gen_build_validation(builder: WasmGenBuilder, properties: any): void;
+
+/**
+ * Create a GenBuilder from a JSON configuration string
+ */
+export function gen_builder_from_json(config_json: string): WasmGenBuilder;
+
+/**
+ * Retrieve any categories
+ */
+export function gen_categories(builder: WasmGenBuilder): string[];
+
+/**
+ * Retrieve the config description from the builder
+ */
+export function gen_description(builder: WasmGenBuilder): string;
+
+/**
+ * Get the list of file specifications from the builder
+ */
+export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
+
+/**
+ * Get the list of licenses that must be validated from the builder
+ */
+export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
+
+/**
+ * Initialize logging and panic hook
+ */
+export function init(): void;
+
+/**
+ * Get MCU variant (probe-rs) chip ID
+ */
+export function mcu_chip_id(variant_name: string): string;
+
+/**
+ * Return the flash base address for a specific MCU family
+ */
+export function mcu_flash_base(name: string): number;
+
+/**
+ * Return detailed information about a specific MCU
+ */
+export function mcu_info(name: string): McuInfo;
+
+/**
+ * Return a list of supported MCUs
+ */
+export function mcus(): string[];
+
+/**
+ * Get a list of MCUs for a specific board
+ */
+export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
+
+/**
+ * Parse a firmware image and return the extracted information as a JSON
+ * object.  Either pass in:
+ * - A complete .bin file
+ * - The first 64KB of a flash dump
+ * - The device's entire flash dump
+ */
+export function parse_firmware(data: Uint8Array): Promise<any>;
+
+/**
+ * Return detailed information about a specific ROM type
+ */
+export function rom_type_info(name: string): RomTypeInfo;
+
+/**
+ * Return a list of supported ROM types
+ */
+export function rom_types(): string[];
+
+/**
+ * WASM Library Version
+ */
+export function version(): string;
+
+/**
+ * Get version information for the various components
+ */
+export function versions(): VersionInfo;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -307,9 +325,9 @@ export interface InitOutput {
   readonly versions: () => number;
   readonly wasmimages_firmware_images: (a: number) => [number, number];
   readonly wasmimages_metadata: (a: number) => [number, number];
-  readonly wasm_bindgen__convert__closures_____invoke__h62b08efba5b8ccbc: (a: number, b: number, c: any) => void;
-  readonly wasm_bindgen__closure__destroy__h03d91b42a8362058: (a: number, b: number) => void;
-  readonly wasm_bindgen__convert__closures_____invoke__h0b1e7be60adc2140: (a: number, b: number, c: any, d: any) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__habc0da91ec84b911: (a: number, b: number, c: any) => void;
+  readonly wasm_bindgen__closure__destroy__h07ff1e7d3a5a188f: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h32409a7d5065ec7f: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_exn_store: (a: number) => void;
@@ -322,6 +340,7 @@ export interface InitOutput {
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
+
 /**
 * Instantiates the given `module`, which can either be bytes or
 * a precompiled `WebAssembly.Module`.
