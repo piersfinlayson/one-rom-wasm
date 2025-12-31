@@ -1,22 +1,20 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Specification for a file that needs to be retrieved and added to the builder
+ * Power pin mapping
  */
-export interface WasmFileSpec {
-    id: number;
-    source: string;
-    extract: string | undefined;
-    size_handling: string;
-    rom_type: string;
-    description: string | undefined;
-    rom_size: number;
-    set_id: number;
-    cs1: string | undefined;
-    cs2: string | undefined;
-    cs3: string | undefined;
-    set_type: string;
-    set_description: string | undefined;
+export interface PowerPin {
+    name: string;
+    pin: number;
+}
+
+/**
+ * Programming pin mapping
+ */
+export interface ProgrammingPin {
+    name: string;
+    pin: number;
+    read_state: string;
 }
 
 /**
@@ -44,35 +42,30 @@ export interface McuInfo {
 }
 
 /**
+ * Specification for a file that needs to be retrieved and added to the builder
+ */
+export interface WasmFileSpec {
+    id: number;
+    source: string;
+    extract: string | undefined;
+    size_handling: string;
+    rom_type: string;
+    description: string | undefined;
+    rom_size: number;
+    set_id: number;
+    cs1: string | undefined;
+    cs2: string | undefined;
+    cs3: string | undefined;
+    set_type: string;
+    set_description: string | undefined;
+}
+
+/**
  * Address pin mapping
  */
 export interface AddressPin {
     line: number;
     pin: number;
-}
-
-/**
- * Detailed ROM type information structure
- */
-export interface RomTypeInfo {
-    name: string;
-    size_bytes: number;
-    rom_pins: number;
-    num_addr_lines: number;
-    address_pins: AddressPin[];
-    data_pins: DataPin[];
-    control_lines: ControlLine[];
-    programming_pins: ProgrammingPin[] | undefined;
-    power_pins: PowerPin[];
-}
-
-/**
- * Programming pin mapping
- */
-export interface ProgrammingPin {
-    name: string;
-    pin: number;
-    read_state: string;
 }
 
 /**
@@ -118,11 +111,18 @@ export interface BoardInfo {
 }
 
 /**
- * Power pin mapping
+ * Detailed ROM type information structure
  */
-export interface PowerPin {
+export interface RomTypeInfo {
     name: string;
-    pin: number;
+    size_bytes: number;
+    rom_pins: number;
+    num_addr_lines: number;
+    address_pins: AddressPin[];
+    data_pins: DataPin[];
+    control_lines: ControlLine[];
+    programming_pins: ProgrammingPin[] | undefined;
+    power_pins: PowerPin[];
 }
 
 
