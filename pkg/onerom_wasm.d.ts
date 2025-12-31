@@ -1,23 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Control line mapping
- */
-export interface ControlLine {
-    name: string;
-    pin: number;
-    configurable: boolean;
-}
-
-/**
- * Data pin mapping
- */
-export interface DataPin {
-    line: number;
-    pin: number;
-}
-
-/**
  * Specification for a file that needs to be retrieved and added to the builder
  */
 export interface WasmFileSpec {
@@ -37,12 +20,12 @@ export interface WasmFileSpec {
 }
 
 /**
- * Programming pin mapping
+ * License
  */
-export interface ProgrammingPin {
-    name: string;
-    pin: number;
-    read_state: string;
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
 }
 
 /**
@@ -61,20 +44,52 @@ export interface McuInfo {
 }
 
 /**
- * Power pin mapping
+ * Address pin mapping
  */
-export interface PowerPin {
-    name: string;
+export interface AddressPin {
+    line: number;
     pin: number;
 }
 
 /**
- * License
+ * Detailed ROM type information structure
  */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
+export interface RomTypeInfo {
+    name: string;
+    size_bytes: number;
+    rom_pins: number;
+    num_addr_lines: number;
+    address_pins: AddressPin[];
+    data_pins: DataPin[];
+    control_lines: ControlLine[];
+    programming_pins: ProgrammingPin[] | undefined;
+    power_pins: PowerPin[];
+}
+
+/**
+ * Programming pin mapping
+ */
+export interface ProgrammingPin {
+    name: string;
+    pin: number;
+    read_state: string;
+}
+
+/**
+ * Control line mapping
+ */
+export interface ControlLine {
+    name: string;
+    pin: number;
+    configurable: boolean;
+}
+
+/**
+ * Data pin mapping
+ */
+export interface DataPin {
+    line: number;
+    pin: number;
 }
 
 /**
@@ -103,26 +118,11 @@ export interface BoardInfo {
 }
 
 /**
- * Address pin mapping
+ * Power pin mapping
  */
-export interface AddressPin {
-    line: number;
-    pin: number;
-}
-
-/**
- * Detailed ROM type information structure
- */
-export interface RomTypeInfo {
+export interface PowerPin {
     name: string;
-    size_bytes: number;
-    rom_pins: number;
-    num_addr_lines: number;
-    address_pins: AddressPin[];
-    data_pins: DataPin[];
-    control_lines: ControlLine[];
-    programming_pins: ProgrammingPin[] | undefined;
-    power_pins: PowerPin[];
+    pin: number;
 }
 
 
@@ -325,9 +325,9 @@ export interface InitOutput {
   readonly versions: () => number;
   readonly wasmimages_firmware_images: (a: number) => [number, number];
   readonly wasmimages_metadata: (a: number) => [number, number];
-  readonly wasm_bindgen__convert__closures_____invoke__habc0da91ec84b911: (a: number, b: number, c: any) => void;
-  readonly wasm_bindgen__closure__destroy__h07ff1e7d3a5a188f: (a: number, b: number) => void;
-  readonly wasm_bindgen__convert__closures_____invoke__h32409a7d5065ec7f: (a: number, b: number, c: any, d: any) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h93088125145ef9e5: (a: number, b: number, c: any) => void;
+  readonly wasm_bindgen__closure__destroy__h39a2dc533aa37487: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h091474265ae9cc6a: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_exn_store: (a: number) => void;
