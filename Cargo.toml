@@ -15,9 +15,9 @@ name = "onerom_wasm"
 path = "src/lib.rs"
 
 [dependencies]
-onerom-config = { version = "0.2.5" }
-onerom-gen = { version = "0.2.3" }
-sdrr-fw-parser = { version = "0.5.7", default-features = false }
+onerom-config = { version = "0.2.6" }
+onerom-gen = { version = "0.2.4" }
+sdrr-fw-parser = { version = "0.5.8", default-features = false }
 
 console_error_panic_hook = "0.1"
 console_log = "1.0"

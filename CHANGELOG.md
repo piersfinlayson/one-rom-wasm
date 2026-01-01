@@ -1,6 +1,8 @@
 # Changelog
 
-## v0.1.5 - ????-??-??
+## v0.1.7 - 2026-01-01
+
+Support new hardware revisions.
 
 ## v0.1.6 - 2025-12-31
 
