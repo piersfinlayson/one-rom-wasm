@@ -1,44 +1,18 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Power pin mapping
+ * Detailed ROM type information structure
  */
-export interface PowerPin {
+export interface RomTypeInfo {
     name: string;
-    pin: number;
-}
-
-/**
- * Programming pin mapping
- */
-export interface ProgrammingPin {
-    name: string;
-    pin: number;
-    read_state: string;
-}
-
-/**
- * License
- */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
-}
-
-/**
- * Basic MCU information structure
- */
-export interface McuInfo {
-    name: string;
-    family: string;
-    flash_kb: number;
-    ram_kb: number;
-    ccm_ram_kb: number | undefined;
-    max_sysclk_mhz: number;
-    supports_usb_dfu: boolean;
-    supports_banked_roms: boolean;
-    supports_multi_rom_sets: boolean;
+    size_bytes: number;
+    rom_pins: number;
+    num_addr_lines: number;
+    address_pins: AddressPin[];
+    data_pins: DataPin[];
+    control_lines: ControlLine[];
+    programming_pins: ProgrammingPin[] | undefined;
+    power_pins: PowerPin[];
 }
 
 /**
@@ -61,9 +35,9 @@ export interface WasmFileSpec {
 }
 
 /**
- * Address pin mapping
+ * Data pin mapping
  */
-export interface AddressPin {
+export interface DataPin {
     line: number;
     pin: number;
 }
@@ -78,10 +52,42 @@ export interface ControlLine {
 }
 
 /**
- * Data pin mapping
+ * Programming pin mapping
  */
-export interface DataPin {
+export interface ProgrammingPin {
+    name: string;
+    pin: number;
+    read_state: string;
+}
+
+/**
+ * Basic MCU information structure
+ */
+export interface McuInfo {
+    name: string;
+    family: string;
+    flash_kb: number;
+    ram_kb: number;
+    ccm_ram_kb: number | undefined;
+    max_sysclk_mhz: number;
+    supports_usb_dfu: boolean;
+    supports_banked_roms: boolean;
+    supports_multi_rom_sets: boolean;
+}
+
+/**
+ * Address pin mapping
+ */
+export interface AddressPin {
     line: number;
+    pin: number;
+}
+
+/**
+ * Power pin mapping
+ */
+export interface PowerPin {
+    name: string;
     pin: number;
 }
 
@@ -111,18 +117,12 @@ export interface BoardInfo {
 }
 
 /**
- * Detailed ROM type information structure
+ * License
  */
-export interface RomTypeInfo {
-    name: string;
-    size_bytes: number;
-    rom_pins: number;
-    num_addr_lines: number;
-    address_pins: AddressPin[];
-    data_pins: DataPin[];
-    control_lines: ControlLine[];
-    programming_pins: ProgrammingPin[] | undefined;
-    power_pins: PowerPin[];
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
 }
 
 
