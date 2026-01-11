@@ -16,11 +16,30 @@ export interface McuInfo {
 }
 
 /**
- * Data pin mapping
+ * Programming pin mapping
  */
-export interface DataPin {
-    line: number;
+export interface ProgrammingPin {
+    name: string;
     pin: number;
+    read_state: string;
+}
+
+/**
+ * License
+ */
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
+}
+
+/**
+ * Control line mapping
+ */
+export interface ControlLine {
+    name: string;
+    pin: number;
+    configurable: boolean;
 }
 
 /**
@@ -49,34 +68,6 @@ export interface BoardInfo {
 }
 
 /**
- * Specification for a file that needs to be retrieved and added to the builder
- */
-export interface WasmFileSpec {
-    id: number;
-    source: string;
-    extract: string | undefined;
-    size_handling: string;
-    rom_type: string;
-    description: string | undefined;
-    rom_size: number;
-    set_id: number;
-    cs1: string | undefined;
-    cs2: string | undefined;
-    cs3: string | undefined;
-    set_type: string;
-    set_description: string | undefined;
-}
-
-/**
- * Control line mapping
- */
-export interface ControlLine {
-    name: string;
-    pin: number;
-    configurable: boolean;
-}
-
-/**
  * Power pin mapping
  */
 export interface PowerPin {
@@ -100,15 +91,6 @@ export interface RomTypeInfo {
 }
 
 /**
- * License
- */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
-}
-
-/**
  * Address pin mapping
  */
 export interface AddressPin {
@@ -117,12 +99,30 @@ export interface AddressPin {
 }
 
 /**
- * Programming pin mapping
+ * Specification for a file that needs to be retrieved and added to the builder
  */
-export interface ProgrammingPin {
-    name: string;
+export interface WasmFileSpec {
+    id: number;
+    source: string;
+    extract: string | undefined;
+    size_handling: string;
+    rom_type: string;
+    description: string | undefined;
+    rom_size: number;
+    set_id: number;
+    cs1: string | undefined;
+    cs2: string | undefined;
+    cs3: string | undefined;
+    set_type: string;
+    set_description: string | undefined;
+}
+
+/**
+ * Data pin mapping
+ */
+export interface DataPin {
+    line: number;
     pin: number;
-    read_state: string;
 }
 
 
@@ -325,17 +325,17 @@ export interface InitOutput {
   readonly versions: () => number;
   readonly wasmimages_firmware_images: (a: number) => [number, number];
   readonly wasmimages_metadata: (a: number) => [number, number];
-  readonly wasm_bindgen__convert__closures_____invoke__h93088125145ef9e5: (a: number, b: number, c: any) => void;
-  readonly wasm_bindgen__closure__destroy__h39a2dc533aa37487: (a: number, b: number) => void;
-  readonly wasm_bindgen__convert__closures_____invoke__h091474265ae9cc6a: (a: number, b: number, c: any, d: any) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h07e2717fee435e78: (a: number, b: number, c: any) => void;
+  readonly wasm_bindgen__closure__destroy__h811a89cf6c3bd861: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h3df7dd4fa1b24816: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_externrefs: WebAssembly.Table;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __externref_table_dealloc: (a: number) => void;
+  readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
