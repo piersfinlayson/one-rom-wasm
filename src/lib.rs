@@ -251,6 +251,8 @@ pub fn rom_type_info(name: String) -> Result<RomTypeInfo, JsValue> {
                     onerom_config::rom::ProgrammingPinState::High => "High",
                     onerom_config::rom::ProgrammingPinState::Low => "Low",
                     onerom_config::rom::ProgrammingPinState::ChipSelect => "ChipSelect",
+                    onerom_config::rom::ProgrammingPinState::Ignored => "Ignored",
+                    onerom_config::rom::ProgrammingPinState::WordSize => "WordSize",
                 }.to_string(),
             })
             .collect()
