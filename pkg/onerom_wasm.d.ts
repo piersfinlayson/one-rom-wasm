@@ -1,18 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Basic MCU information structure
+ * Control line mapping
  */
-export interface McuInfo {
+export interface ControlLine {
     name: string;
-    family: string;
-    flash_kb: number;
-    ram_kb: number;
-    ccm_ram_kb: number | undefined;
-    max_sysclk_mhz: number;
-    supports_usb_dfu: boolean;
-    supports_banked_roms: boolean;
-    supports_multi_rom_sets: boolean;
+    pin: number;
+    configurable: boolean;
 }
 
 /**
@@ -34,12 +28,27 @@ export interface WasmLicense {
 }
 
 /**
- * Control line mapping
+ * Address pin mapping
  */
-export interface ControlLine {
+export interface AddressPin {
+    line: number;
+    pin: number;
+}
+
+/**
+ * Power pin mapping
+ */
+export interface PowerPin {
     name: string;
     pin: number;
-    configurable: boolean;
+}
+
+/**
+ * Data pin mapping
+ */
+export interface DataPin {
+    line: number;
+    pin: number;
 }
 
 /**
@@ -68,34 +77,18 @@ export interface BoardInfo {
 }
 
 /**
- * Power pin mapping
+ * Basic MCU information structure
  */
-export interface PowerPin {
+export interface McuInfo {
     name: string;
-    pin: number;
-}
-
-/**
- * Detailed ROM type information structure
- */
-export interface RomTypeInfo {
-    name: string;
-    size_bytes: number;
-    rom_pins: number;
-    num_addr_lines: number;
-    address_pins: AddressPin[];
-    data_pins: DataPin[];
-    control_lines: ControlLine[];
-    programming_pins: ProgrammingPin[] | undefined;
-    power_pins: PowerPin[];
-}
-
-/**
- * Address pin mapping
- */
-export interface AddressPin {
-    line: number;
-    pin: number;
+    family: string;
+    flash_kb: number;
+    ram_kb: number;
+    ccm_ram_kb: number | undefined;
+    max_sysclk_mhz: number;
+    supports_usb_dfu: boolean;
+    supports_banked_roms: boolean;
+    supports_multi_rom_sets: boolean;
 }
 
 /**
@@ -118,11 +111,18 @@ export interface WasmFileSpec {
 }
 
 /**
- * Data pin mapping
+ * Detailed ROM type information structure
  */
-export interface DataPin {
-    line: number;
-    pin: number;
+export interface RomTypeInfo {
+    name: string;
+    size_bytes: number;
+    rom_pins: number;
+    num_addr_lines: number;
+    address_pins: AddressPin[];
+    data_pins: DataPin[];
+    control_lines: ControlLine[];
+    programming_pins: ProgrammingPin[] | undefined;
+    power_pins: PowerPin[];
 }
 
 
@@ -334,8 +334,8 @@ export interface InitOutput {
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_externrefs: WebAssembly.Table;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly __externref_table_dealloc: (a: number) => void;
   readonly __externref_drop_slice: (a: number, b: number) => void;
+  readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
