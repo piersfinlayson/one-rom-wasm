@@ -12,7 +12,7 @@ export const boards_for_mcu_family: (a: number, b: number) => [number, number, n
 export const gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
 export const gen_build: (a: number, b: any) => [number, number, number];
 export const gen_build_validation: (a: number, b: any) => [number, number];
-export const gen_builder_from_json: (a: number, b: number) => [number, number, number];
+export const gen_builder_from_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
 export const gen_categories: (a: number) => [number, number];
 export const gen_description: (a: number) => [number, number];
 export const gen_file_specs: (a: number) => [number, number];
@@ -46,6 +46,6 @@ export const __wbindgen_exn_store: (a: number) => void;
 export const __externref_table_alloc: () => number;
 export const __wbindgen_externrefs: WebAssembly.Table;
 export const __wbindgen_free: (a: number, b: number, c: number) => void;
-export const __externref_drop_slice: (a: number, b: number) => void;
 export const __externref_table_dealloc: (a: number) => void;
+export const __externref_drop_slice: (a: number, b: number) => void;
 export const __wbindgen_start: () => void;

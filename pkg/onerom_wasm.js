@@ -590,13 +590,23 @@ export function gen_build_validation(builder, properties) {
 
 /**
  * Create a GenBuilder from a JSON configuration string
+ *
+ * Version: "0.3.4" or "0.5.1.1" format
+ * Family: "STM32F4" and "RP2350"
+ *
+ * @param {string} version
+ * @param {string} family
  * @param {string} config_json
  * @returns {WasmGenBuilder}
  */
-export function gen_builder_from_json(config_json) {
-    const ptr0 = passStringToWasm0(config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function gen_builder_from_json(version, family, config_json) {
+    const ptr0 = passStringToWasm0(version, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.gen_builder_from_json(ptr0, len0);
+    const ptr1 = passStringToWasm0(family, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ptr2 = passStringToWasm0(config_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len2 = WASM_VECTOR_LEN;
+    const ret = wasm.gen_builder_from_json(ptr0, len0, ptr1, len1, ptr2, len2);
     if (ret[2]) {
         throw takeFromExternrefTable0(ret[1]);
     }
@@ -1118,14 +1128,14 @@ function __wbg_get_imports() {
         const ret = BigInt.asUintN(64, arg0);
         return ret;
     };
+    imports.wbg.__wbindgen_cast_59b536ec5375efa9 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 85, function: Function { arguments: [Externref], shim_idx: 86, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h811a89cf6c3bd861, wasm_bindgen__convert__closures_____invoke__h07e2717fee435e78);
+        return ret;
+    };
     imports.wbg.__wbindgen_cast_d6cd19b81560fd6e = function(arg0) {
         // Cast intrinsic for `F64 -> Externref`.
         const ret = arg0;
-        return ret;
-    };
-    imports.wbg.__wbindgen_cast_dcdf18981bb2dbbf = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 77, function: Function { arguments: [Externref], shim_idx: 78, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h811a89cf6c3bd861, wasm_bindgen__convert__closures_____invoke__h07e2717fee435e78);
         return ret;
     };
     imports.wbg.__wbindgen_init_externref_table = function() {

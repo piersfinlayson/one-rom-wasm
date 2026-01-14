@@ -1,30 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Control line mapping
- */
-export interface ControlLine {
-    name: string;
-    pin: number;
-    configurable: boolean;
-}
-
-/**
  * Programming pin mapping
  */
 export interface ProgrammingPin {
     name: string;
     pin: number;
     read_state: string;
-}
-
-/**
- * License
- */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
 }
 
 /**
@@ -44,11 +26,50 @@ export interface PowerPin {
 }
 
 /**
+ * Basic MCU information structure
+ */
+export interface McuInfo {
+    name: string;
+    family: string;
+    flash_kb: number;
+    ram_kb: number;
+    ccm_ram_kb: number | undefined;
+    max_sysclk_mhz: number;
+    supports_usb_dfu: boolean;
+    supports_banked_roms: boolean;
+    supports_multi_rom_sets: boolean;
+}
+
+/**
  * Data pin mapping
  */
 export interface DataPin {
     line: number;
     pin: number;
+}
+
+/**
+ * Control line mapping
+ */
+export interface ControlLine {
+    name: string;
+    pin: number;
+    configurable: boolean;
+}
+
+/**
+ * Detailed ROM type information structure
+ */
+export interface RomTypeInfo {
+    name: string;
+    size_bytes: number;
+    rom_pins: number;
+    num_addr_lines: number;
+    address_pins: AddressPin[];
+    data_pins: DataPin[];
+    control_lines: ControlLine[];
+    programming_pins: ProgrammingPin[] | undefined;
+    power_pins: PowerPin[];
 }
 
 /**
@@ -70,24 +91,9 @@ export interface BoardInfo {
     port_cs: string;
     port_sel: string;
     port_status: string;
-    sel_jumper_pull: number;
+    sel_jumper_pulls: number[];
     x_jumper_pull: number;
     has_usb: boolean;
-    supports_multi_rom_sets: boolean;
-}
-
-/**
- * Basic MCU information structure
- */
-export interface McuInfo {
-    name: string;
-    family: string;
-    flash_kb: number;
-    ram_kb: number;
-    ccm_ram_kb: number | undefined;
-    max_sysclk_mhz: number;
-    supports_usb_dfu: boolean;
-    supports_banked_roms: boolean;
     supports_multi_rom_sets: boolean;
 }
 
@@ -111,18 +117,12 @@ export interface WasmFileSpec {
 }
 
 /**
- * Detailed ROM type information structure
+ * License
  */
-export interface RomTypeInfo {
-    name: string;
-    size_bytes: number;
-    rom_pins: number;
-    num_addr_lines: number;
-    address_pins: AddressPin[];
-    data_pins: DataPin[];
-    control_lines: ControlLine[];
-    programming_pins: ProgrammingPin[] | undefined;
-    power_pins: PowerPin[];
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
 }
 
 
@@ -203,8 +203,12 @@ export function gen_build_validation(builder: WasmGenBuilder, properties: any): 
 
 /**
  * Create a GenBuilder from a JSON configuration string
+ * 
+ * Version: "0.3.4" or "0.5.1.1" format
+ * Family: "STM32F4" and "RP2350"
+ * 
  */
-export function gen_builder_from_json(config_json: string): WasmGenBuilder;
+export function gen_builder_from_json(version: string, family: string, config_json: string): WasmGenBuilder;
 
 /**
  * Retrieve any categories
@@ -300,7 +304,7 @@ export interface InitOutput {
   readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
   readonly gen_build: (a: number, b: any) => [number, number, number];
   readonly gen_build_validation: (a: number, b: any) => [number, number];
-  readonly gen_builder_from_json: (a: number, b: number) => [number, number, number];
+  readonly gen_builder_from_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
   readonly gen_categories: (a: number) => [number, number];
   readonly gen_description: (a: number) => [number, number];
   readonly gen_file_specs: (a: number) => [number, number];
@@ -334,8 +338,8 @@ export interface InitOutput {
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_externrefs: WebAssembly.Table;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __externref_table_dealloc: (a: number) => void;
+  readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
