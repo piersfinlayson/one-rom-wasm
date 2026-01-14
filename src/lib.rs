@@ -6,7 +6,8 @@ use serde::{Serialize, Deserialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-use onerom_config::fw::FirmwareProperties;
+use onerom_config::fw::{FirmwareVersion, FirmwareProperties};
+use onerom_config::mcu::Family;
 use onerom_gen::{Builder as GenBuilder, FileData};
 use sdrr_fw_parser::{Parser, readers::MemoryReader};
 
@@ -308,7 +309,7 @@ pub struct BoardInfo {
     port_status: String,
     
     // Jumper configuration
-    sel_jumper_pull: u8,  // 0=down, 1=up
+    sel_jumper_pulls: Vec<u8>,  // 0=down, 1=up
     x_jumper_pull: u8,
     
     // Capabilities
@@ -363,7 +364,7 @@ pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
         port_sel: board.port_sel().to_string(),
         port_status: board.port_status().to_string(),
         
-        sel_jumper_pull: board.sel_jumper_pull(),
+        sel_jumper_pulls: board.sel_jumper_pulls().to_vec(),
         x_jumper_pull: board.x_jumper_pull(),
         
         has_usb: board.has_usb(),
@@ -497,9 +498,18 @@ impl WasmImages {
 }
 
 /// Create a GenBuilder from a JSON configuration string
+/// 
+/// Version: "0.3.4" or "0.5.1.1" format
+/// Family: "STM32F4" and "RP2350"
+/// 
 #[wasm_bindgen]
-pub fn gen_builder_from_json(config_json: &str) -> Result<WasmGenBuilder, String> {
-    Ok(WasmGenBuilder(GenBuilder::from_json(config_json)
+pub fn gen_builder_from_json(version: String, family: String, config_json: &str) -> Result<WasmGenBuilder, String> {
+    let version = FirmwareVersion::try_from_str(&version)
+        .map_err(|_| "Invalid firmware version format".to_string())?;
+    let family = Family::try_from_str(&family)
+        .ok_or("Unknown MCU family".to_string())?;
+
+    Ok(WasmGenBuilder(GenBuilder::from_json(version, family, config_json)
         .map_err(|e| format!("Error creating GenBuilder: {e:?}"))?))
 }
 

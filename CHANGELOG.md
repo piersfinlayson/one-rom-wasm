@@ -1,7 +1,10 @@
 # Changelog
 
-## v0.1.9 - 2026-??-??
+## v0.2.0 - 2026-01-14
 
+Support firmware 0.6.0, requires breaking API changes.
+
+Includes support for building and parsing 0.6.0 fimrware images, including the new firmware overrides.
 
 ## v0.1.8 - 2026-01-11
 
