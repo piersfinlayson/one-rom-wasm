@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.1 - 2026-??-??
+
+
 ## v0.2.0 - 2026-01-14
 
 Support firmware 0.6.0, requires breaking API changes.
