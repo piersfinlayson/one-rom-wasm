@@ -1,63 +1,10 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Data pin mapping
- */
-export interface DataPin {
-    line: number;
-    pin: number;
-}
-
-/**
- * License
- */
-export interface WasmLicense {
-    id: number;
-    file_id: number;
-    url: string;
-}
-
-/**
- * Control line mapping
- */
-export interface ControlLine {
-    name: string;
-    pin: number;
-    configurable: boolean;
-}
-
-/**
  * Address pin mapping
  */
 export interface AddressPin {
     line: number;
-    pin: number;
-}
-
-/**
- * Specification for a file that needs to be retrieved and added to the builder
- */
-export interface WasmFileSpec {
-    id: number;
-    source: string;
-    extract: string | undefined;
-    size_handling: string;
-    rom_type: string;
-    description: string | undefined;
-    rom_size: number;
-    set_id: number;
-    cs1: string | undefined;
-    cs2: string | undefined;
-    cs3: string | undefined;
-    set_type: string;
-    set_description: string | undefined;
-}
-
-/**
- * Power pin mapping
- */
-export interface PowerPin {
-    name: string;
     pin: number;
 }
 
@@ -77,6 +24,23 @@ export interface McuInfo {
 }
 
 /**
+ * Control line mapping
+ */
+export interface ControlLine {
+    name: string;
+    pin: number;
+    configurable: boolean;
+}
+
+/**
+ * Data pin mapping
+ */
+export interface DataPin {
+    line: number;
+    pin: number;
+}
+
+/**
  * Detailed ROM type information structure
  */
 export interface RomTypeInfo {
@@ -89,6 +53,15 @@ export interface RomTypeInfo {
     control_lines: ControlLine[];
     programming_pins: ProgrammingPin[] | undefined;
     power_pins: PowerPin[];
+}
+
+/**
+ * License
+ */
+export interface WasmLicense {
+    id: number;
+    file_id: number;
+    url: string;
 }
 
 /**
@@ -117,6 +90,14 @@ export interface BoardInfo {
 }
 
 /**
+ * Power pin mapping
+ */
+export interface PowerPin {
+    name: string;
+    pin: number;
+}
+
+/**
  * Programming pin mapping
  */
 export interface ProgrammingPin {
@@ -125,38 +106,66 @@ export interface ProgrammingPin {
     read_state: string;
 }
 
+/**
+ * Specification for a file that needs to be retrieved and added to the builder
+ */
+export interface WasmFileSpec {
+    id: number;
+    source: string;
+    extract: string | undefined;
+    size_handling: string;
+    rom_type: string;
+    description: string | undefined;
+    rom_size: number;
+    set_id: number;
+    cs1: string | undefined;
+    cs2: string | undefined;
+    cs3: string | undefined;
+    set_type: string;
+    set_description: string | undefined;
+}
+
 
 export class ValuePrettyPair {
-  private constructor();
-  free(): void;
-  [Symbol.dispose](): void;
-  readonly value: string;
-  readonly pretty: string;
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly pretty: string;
+    readonly value: string;
 }
 
+/**
+ * Version information for the various components
+ */
 export class VersionInfo {
-  private constructor();
-  free(): void;
-  [Symbol.dispose](): void;
-  readonly onerom_gen: string;
-  readonly onerom_wasm: string;
-  readonly onerom_config: string;
-  readonly sdrr_fw_parser: string;
-  readonly metadata_version: string;
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly metadata_version: string;
+    readonly onerom_config: string;
+    readonly onerom_gen: string;
+    readonly onerom_wasm: string;
+    readonly sdrr_fw_parser: string;
 }
 
+/**
+ * Builder for generating firmware images
+ */
 export class WasmGenBuilder {
-  private constructor();
-  free(): void;
-  [Symbol.dispose](): void;
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
 }
 
+/**
+ * Result of building a firmware image: (firmware_image, metadata_json)
+ */
 export class WasmImages {
-  private constructor();
-  free(): void;
-  [Symbol.dispose](): void;
-  readonly firmware_images: Uint8Array;
-  readonly metadata: Uint8Array;
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly firmware_images: Uint8Array;
+    readonly metadata: Uint8Array;
 }
 
 /**
@@ -203,10 +212,10 @@ export function gen_build_validation(builder: WasmGenBuilder, properties: any): 
 
 /**
  * Create a GenBuilder from a JSON configuration string
- * 
+ *
  * Version: "0.3.4" or "0.5.1.1" format
  * Family: "STM32F4" and "RP2350"
- * 
+ *
  */
 export function gen_builder_from_json(version: string, family: string, config_json: string): WasmGenBuilder;
 
@@ -292,75 +301,75 @@ export function versions(): VersionInfo;
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
-  readonly memory: WebAssembly.Memory;
-  readonly __wbg_valueprettypair_free: (a: number, b: number) => void;
-  readonly __wbg_versioninfo_free: (a: number, b: number) => void;
-  readonly __wbg_wasmgenbuilder_free: (a: number, b: number) => void;
-  readonly __wbg_wasmimages_free: (a: number, b: number) => void;
-  readonly accept_license: (a: number, b: any) => [number, number];
-  readonly board_info: (a: number, b: number) => [number, number, number];
-  readonly boards: () => [number, number, number, number];
-  readonly boards_for_mcu_family: (a: number, b: number) => [number, number, number, number];
-  readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
-  readonly gen_build: (a: number, b: any) => [number, number, number];
-  readonly gen_build_validation: (a: number, b: any) => [number, number];
-  readonly gen_builder_from_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
-  readonly gen_categories: (a: number) => [number, number];
-  readonly gen_description: (a: number) => [number, number];
-  readonly gen_file_specs: (a: number) => [number, number];
-  readonly gen_licenses: (a: number) => [number, number];
-  readonly init: () => void;
-  readonly mcu_chip_id: (a: number, b: number) => [number, number, number, number];
-  readonly mcu_flash_base: (a: number, b: number) => [number, number, number];
-  readonly mcu_info: (a: number, b: number) => [number, number, number];
-  readonly mcus: () => [number, number];
-  readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
-  readonly parse_firmware: (a: number, b: number) => any;
-  readonly rom_type_info: (a: number, b: number) => [number, number, number];
-  readonly rom_types: () => [number, number];
-  readonly valueprettypair_pretty: (a: number) => [number, number];
-  readonly valueprettypair_value: (a: number) => [number, number];
-  readonly version: () => [number, number];
-  readonly versioninfo_metadata_version: (a: number) => [number, number];
-  readonly versioninfo_onerom_config: (a: number) => [number, number];
-  readonly versioninfo_onerom_gen: (a: number) => [number, number];
-  readonly versioninfo_onerom_wasm: (a: number) => [number, number];
-  readonly versioninfo_sdrr_fw_parser: (a: number) => [number, number];
-  readonly versions: () => number;
-  readonly wasmimages_firmware_images: (a: number) => [number, number];
-  readonly wasmimages_metadata: (a: number) => [number, number];
-  readonly wasm_bindgen__convert__closures_____invoke__h07e2717fee435e78: (a: number, b: number, c: any) => void;
-  readonly wasm_bindgen__closure__destroy__h811a89cf6c3bd861: (a: number, b: number) => void;
-  readonly wasm_bindgen__convert__closures_____invoke__h3df7dd4fa1b24816: (a: number, b: number, c: any, d: any) => void;
-  readonly __wbindgen_malloc: (a: number, b: number) => number;
-  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_exn_store: (a: number) => void;
-  readonly __externref_table_alloc: () => number;
-  readonly __wbindgen_externrefs: WebAssembly.Table;
-  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly __externref_drop_slice: (a: number, b: number) => void;
-  readonly __externref_table_dealloc: (a: number) => void;
-  readonly __wbindgen_start: () => void;
+    readonly memory: WebAssembly.Memory;
+    readonly __wbg_valueprettypair_free: (a: number, b: number) => void;
+    readonly __wbg_versioninfo_free: (a: number, b: number) => void;
+    readonly __wbg_wasmgenbuilder_free: (a: number, b: number) => void;
+    readonly __wbg_wasmimages_free: (a: number, b: number) => void;
+    readonly accept_license: (a: number, b: any) => [number, number];
+    readonly board_info: (a: number, b: number) => [number, number, number];
+    readonly boards: () => [number, number, number, number];
+    readonly boards_for_mcu_family: (a: number, b: number) => [number, number, number, number];
+    readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly gen_build: (a: number, b: any) => [number, number, number];
+    readonly gen_build_validation: (a: number, b: any) => [number, number];
+    readonly gen_builder_from_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
+    readonly gen_categories: (a: number) => [number, number];
+    readonly gen_description: (a: number) => [number, number];
+    readonly gen_file_specs: (a: number) => [number, number];
+    readonly gen_licenses: (a: number) => [number, number];
+    readonly init: () => void;
+    readonly mcu_chip_id: (a: number, b: number) => [number, number, number, number];
+    readonly mcu_flash_base: (a: number, b: number) => [number, number, number];
+    readonly mcu_info: (a: number, b: number) => [number, number, number];
+    readonly mcus: () => [number, number];
+    readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
+    readonly parse_firmware: (a: number, b: number) => any;
+    readonly rom_type_info: (a: number, b: number) => [number, number, number];
+    readonly rom_types: () => [number, number];
+    readonly valueprettypair_pretty: (a: number) => [number, number];
+    readonly valueprettypair_value: (a: number) => [number, number];
+    readonly version: () => [number, number];
+    readonly versioninfo_metadata_version: (a: number) => [number, number];
+    readonly versioninfo_onerom_config: (a: number) => [number, number];
+    readonly versioninfo_onerom_gen: (a: number) => [number, number];
+    readonly versioninfo_onerom_wasm: (a: number) => [number, number];
+    readonly versioninfo_sdrr_fw_parser: (a: number) => [number, number];
+    readonly versions: () => number;
+    readonly wasmimages_firmware_images: (a: number) => [number, number];
+    readonly wasmimages_metadata: (a: number) => [number, number];
+    readonly wasm_bindgen__closure__destroy__h6d899afadbee2228: (a: number, b: number) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h22d8b7a9f9936ce0: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__hd0f95e833ea9e1e2: (a: number, b: number, c: any) => void;
+    readonly __wbindgen_malloc: (a: number, b: number) => number;
+    readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+    readonly __wbindgen_exn_store: (a: number) => void;
+    readonly __externref_table_alloc: () => number;
+    readonly __wbindgen_externrefs: WebAssembly.Table;
+    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+    readonly __externref_table_dealloc: (a: number) => void;
+    readonly __externref_drop_slice: (a: number, b: number) => void;
+    readonly __wbindgen_start: () => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
 
 /**
-* Instantiates the given `module`, which can either be bytes or
-* a precompiled `WebAssembly.Module`.
-*
-* @param {{ module: SyncInitInput }} module - Passing `SyncInitInput` directly is deprecated.
-*
-* @returns {InitOutput}
-*/
+ * Instantiates the given `module`, which can either be bytes or
+ * a precompiled `WebAssembly.Module`.
+ *
+ * @param {{ module: SyncInitInput }} module - Passing `SyncInitInput` directly is deprecated.
+ *
+ * @returns {InitOutput}
+ */
 export function initSync(module: { module: SyncInitInput } | SyncInitInput): InitOutput;
 
 /**
-* If `module_or_path` is {RequestInfo} or {URL}, makes a request and
-* for everything else, calls `WebAssembly.instantiate` directly.
-*
-* @param {{ module_or_path: InitInput | Promise<InitInput> }} module_or_path - Passing `InitInput` directly is deprecated.
-*
-* @returns {Promise<InitOutput>}
-*/
+ * If `module_or_path` is {RequestInfo} or {URL}, makes a request and
+ * for everything else, calls `WebAssembly.instantiate` directly.
+ *
+ * @param {{ module_or_path: InitInput | Promise<InitInput> }} module_or_path - Passing `InitInput` directly is deprecated.
+ *
+ * @returns {Promise<InitOutput>}
+ */
 export default function __wbg_init (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;
