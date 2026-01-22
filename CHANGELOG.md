@@ -1,7 +1,8 @@
 # Changelog
 
-## v0.2.1 - 2026-??-??
+## v0.2.1 - 2026-01-22
 
+Uprev onerom-config and onerom-gen to get fixes (2732 ROM generation specifically).
 
 ## v0.2.0 - 2026-01-14
 
