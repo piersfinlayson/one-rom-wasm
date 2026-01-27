@@ -150,11 +150,11 @@ pub fn mcu_info(name: String) -> Result<McuInfo, JsValue> {
 /// Detailed ROM type information structure
 #[derive(Serialize, Tsify)]
 #[tsify(into_wasm_abi)]
-pub struct RomTypeInfo {
+pub struct ChipTypeInfo {
     // Basic metadata
     name: String,
     size_bytes: usize,
-    rom_pins: u8,
+    chip_pins: u8,
     num_addr_lines: usize,
     
     // Complete pinout data
@@ -208,8 +208,8 @@ pub struct PowerPin {
 }
 /// Return a list of supported ROM types
 #[wasm_bindgen]
-pub fn rom_types() -> Vec<String> {
-    onerom_config::rom::ROM_TYPES
+pub fn chip_types() -> Vec<String> {
+    onerom_config::chip::CHIP_TYPES
         .iter()
         .map(|t| t.name().to_string())
         .collect()
@@ -217,49 +217,49 @@ pub fn rom_types() -> Vec<String> {
 
 /// Return detailed information about a specific ROM type
 #[wasm_bindgen]
-pub fn rom_type_info(name: String) -> Result<RomTypeInfo, JsValue> {
-    let rom_type = onerom_config::rom::RomType::try_from_str(&name)
+pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
+    let chip_type = onerom_config::chip::ChipType::try_from_str(&name)
         .ok_or_else(|| JsValue::from_str(&format!("Unknown ROM type: {}", name)))?;
 
-    let address_pins = rom_type.address_pins()
+    let address_pins = chip_type.address_pins()
         .iter()
         .enumerate()
         .map(|(line, &pin)| AddressPin { line, pin })
         .collect();
 
-    let data_pins = rom_type.data_pins()
+    let data_pins = chip_type.data_pins()
         .iter()
         .enumerate()
         .map(|(line, &pin)| DataPin { line, pin })
         .collect();
 
-    let control_lines = rom_type.control_lines()
+    let control_lines = chip_type.control_lines()
         .iter()
         .map(|cl| ControlLine {
             name: cl.name.to_string(),
             pin: cl.pin,
-            configurable: cl.line_type == onerom_config::rom::ControlLineType::Configurable,
+            configurable: cl.line_type == onerom_config::chip::ControlLineType::Configurable,
         })
         .collect();
 
-    let programming_pins = rom_type.programming_pins().map(|pins| {
+    let programming_pins = chip_type.programming_pins().map(|pins| {
         pins.iter()
             .map(|p| ProgrammingPin {
                 name: p.name.to_string(),
                 pin: p.pin,
                 read_state: match p.read_state {
-                    onerom_config::rom::ProgrammingPinState::Vcc => "Vcc",
-                    onerom_config::rom::ProgrammingPinState::High => "High",
-                    onerom_config::rom::ProgrammingPinState::Low => "Low",
-                    onerom_config::rom::ProgrammingPinState::ChipSelect => "ChipSelect",
-                    onerom_config::rom::ProgrammingPinState::Ignored => "Ignored",
-                    onerom_config::rom::ProgrammingPinState::WordSize => "WordSize",
+                    onerom_config::chip::ProgrammingPinState::Vcc => "Vcc",
+                    onerom_config::chip::ProgrammingPinState::High => "High",
+                    onerom_config::chip::ProgrammingPinState::Low => "Low",
+                    onerom_config::chip::ProgrammingPinState::ChipSelect => "ChipSelect",
+                    onerom_config::chip::ProgrammingPinState::Ignored => "Ignored",
+                    onerom_config::chip::ProgrammingPinState::WordSize => "WordSize",
                 }.to_string(),
             })
             .collect()
     });
 
-    let power_pins = rom_type.power_pins()
+    let power_pins = chip_type.power_pins()
         .iter()
         .map(|p| PowerPin {
             name: p.name.to_string(),
@@ -267,11 +267,11 @@ pub fn rom_type_info(name: String) -> Result<RomTypeInfo, JsValue> {
         })
         .collect();
 
-    let info = RomTypeInfo {
-        name: rom_type.name().to_string(),
-        size_bytes: rom_type.size_bytes(),
-        rom_pins: rom_type.rom_pins(),
-        num_addr_lines: rom_type.num_addr_lines(),
+    let info = ChipTypeInfo {
+        name: chip_type.name().to_string(),
+        size_bytes: chip_type.size_bytes(),
+        chip_pins: chip_type.chip_pins(),
+        num_addr_lines: chip_type.num_addr_lines(),
         address_pins,
         data_pins,
         control_lines,
@@ -291,7 +291,7 @@ pub struct BoardInfo {
     name: String,
     description: String,
     mcu_family: String,
-    rom_pins: u8,
+    chip_pins: u8,
     
     // Pin assignments
     data_pins: Vec<u8>,
@@ -314,7 +314,7 @@ pub struct BoardInfo {
     
     // Capabilities
     has_usb: bool,
-    supports_multi_rom_sets: bool,
+    supports_multi_chip_sets: bool,
 }
 
 
@@ -349,7 +349,7 @@ pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
         name: board.name().to_string(),
         description: board.description().to_string(),
         mcu_family: board.mcu_family().to_string(),
-        rom_pins: board.rom_pins(),
+        chip_pins: board.chip_pins(),
         
         data_pins: board.data_pins().to_vec(),
         addr_pins: board.addr_pins().to_vec(),
@@ -368,7 +368,7 @@ pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
         x_jumper_pull: board.x_jumper_pull(),
         
         has_usb: board.has_usb(),
-        supports_multi_rom_sets: board.supports_multi_rom_sets(),
+        supports_multi_chip_sets: board.supports_multi_chip_sets(),
     };
 
     Ok(info)
@@ -468,7 +468,7 @@ pub struct WasmFileSpec{
     pub source: String,
     pub extract: Option<String>,
     pub size_handling: String,
-    pub rom_type: String,
+    pub chip_type: String,
     pub description: Option<String>,
     pub rom_size: usize,
     pub set_id: usize,
@@ -524,7 +524,7 @@ pub fn gen_file_specs(builder: &WasmGenBuilder) -> Vec<WasmFileSpec> {
             extract: spec.extract,
             size_handling: serde_json::to_string(&spec.size_handling).unwrap().trim_matches('"').to_string(),
             rom_size: spec.rom_size,
-            rom_type: serde_json::to_string(&spec.rom_type.name()).unwrap().trim_matches('"').to_string(),
+            chip_type: serde_json::to_string(&spec.chip_type.name()).unwrap().trim_matches('"').to_string(),
             description: spec.description,
             set_id: spec.set_id,
             cs1: serde_json::to_string(&spec.cs1).ok().map(|s| s.trim_matches('"').to_string()),

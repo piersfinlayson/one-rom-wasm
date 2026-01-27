@@ -1,6 +1,6 @@
 [package]
 name = "onerom-wasm"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2024"
 authors = ["Piers Finlayson <piers@piers.rocks>"]
 description = "One ROM Supporting Tooling Web Assembly Implementation"
@@ -15,9 +15,9 @@ name = "onerom_wasm"
 path = "src/lib.rs"
 
 [dependencies]
-onerom-config = { version = "0.3.1" }
-onerom-gen = { version = "0.3.1" }
-sdrr-fw-parser = { version = "0.6.1", default-features = false }
+onerom-config = { version = "0.4.0" }
+onerom-gen = { version = "0.4.0" }
+sdrr-fw-parser = { version = "0.6.2", default-features = false }
 
 console_error_panic_hook = "0.1"
 console_log = "1.0"

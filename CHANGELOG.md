@@ -1,8 +1,8 @@
 # Changelog
 
-## v0.2.2 - 2026-??-??
+## v0.3.0 - 2026-??-??
 
-
+Supports firmware 0.6.2+ with breaking API changes - ROM changed to Chip, and includes RAM chip support.
 
 ## v0.2.1 - 2026-01-22
 

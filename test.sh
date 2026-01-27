@@ -1,5 +1,5 @@
 #!/bin/bash
 echo "Starting HTTP server..."
-echo "Navigate to: http://sb1:8000/index.html"
+echo "Navigate to: http://localhost:8000/index.html"
 echo ""
-python3 -m http.server 8000 --bind 0.0.0.0 -d deploy
+miniserve --header "Access-Control-Allow-Origin:*" --port 8000 ./deploy
