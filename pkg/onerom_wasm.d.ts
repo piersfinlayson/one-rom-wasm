@@ -43,10 +43,10 @@ export interface DataPin {
 /**
  * Detailed ROM type information structure
  */
-export interface RomTypeInfo {
+export interface ChipTypeInfo {
     name: string;
     size_bytes: number;
-    rom_pins: number;
+    chip_pins: number;
     num_addr_lines: number;
     address_pins: AddressPin[];
     data_pins: DataPin[];
@@ -71,7 +71,7 @@ export interface BoardInfo {
     name: string;
     description: string;
     mcu_family: string;
-    rom_pins: number;
+    chip_pins: number;
     data_pins: number[];
     addr_pins: number[];
     sel_pins: number[];
@@ -86,7 +86,7 @@ export interface BoardInfo {
     sel_jumper_pulls: number[];
     x_jumper_pull: number;
     has_usb: boolean;
-    supports_multi_rom_sets: boolean;
+    supports_multi_chip_sets: boolean;
 }
 
 /**
@@ -114,7 +114,7 @@ export interface WasmFileSpec {
     source: string;
     extract: string | undefined;
     size_handling: string;
-    rom_type: string;
+    chip_type: string;
     description: string | undefined;
     rom_size: number;
     set_id: number;
@@ -187,6 +187,16 @@ export function boards(): string[];
  * Get a list of boards for a specific MCU family
  */
 export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
+
+/**
+ * Return detailed information about a specific ROM type
+ */
+export function chip_type_info(name: string): ChipTypeInfo;
+
+/**
+ * Return a list of supported ROM types
+ */
+export function chip_types(): string[];
 
 /**
  * Add a retrieved file to the builder
@@ -279,16 +289,6 @@ export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
 export function parse_firmware(data: Uint8Array): Promise<any>;
 
 /**
- * Return detailed information about a specific ROM type
- */
-export function rom_type_info(name: string): RomTypeInfo;
-
-/**
- * Return a list of supported ROM types
- */
-export function rom_types(): string[];
-
-/**
  * WASM Library Version
  */
 export function version(): string;
@@ -310,6 +310,8 @@ export interface InitOutput {
     readonly board_info: (a: number, b: number) => [number, number, number];
     readonly boards: () => [number, number, number, number];
     readonly boards_for_mcu_family: (a: number, b: number) => [number, number, number, number];
+    readonly chip_type_info: (a: number, b: number) => [number, number, number];
+    readonly chip_types: () => [number, number];
     readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
     readonly gen_build: (a: number, b: any) => [number, number, number];
     readonly gen_build_validation: (a: number, b: any) => [number, number];
@@ -325,8 +327,6 @@ export interface InitOutput {
     readonly mcus: () => [number, number];
     readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
     readonly parse_firmware: (a: number, b: number) => any;
-    readonly rom_type_info: (a: number, b: number) => [number, number, number];
-    readonly rom_types: () => [number, number];
     readonly valueprettypair_pretty: (a: number) => [number, number];
     readonly valueprettypair_value: (a: number) => [number, number];
     readonly version: () => [number, number];
@@ -338,9 +338,9 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen__closure__destroy__h6d899afadbee2228: (a: number, b: number) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h22d8b7a9f9936ce0: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__hd0f95e833ea9e1e2: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen__closure__destroy__he366b2942902d1b9: (a: number, b: number) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h48e0ae2f1b2979a4: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h733e69718253dccd: (a: number, b: number, c: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;

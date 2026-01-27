@@ -276,6 +276,32 @@ export function boards_for_mcu_family(family_name) {
 }
 
 /**
+ * Return detailed information about a specific ROM type
+ * @param {string} name
+ * @returns {ChipTypeInfo}
+ */
+export function chip_type_info(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.chip_type_info(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
+}
+
+/**
+ * Return a list of supported ROM types
+ * @returns {string[]}
+ */
+export function chip_types() {
+    const ret = wasm.chip_types();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
+}
+
+/**
  * Add a retrieved file to the builder
  * @param {WasmGenBuilder} builder
  * @param {number} id
@@ -517,32 +543,6 @@ export function parse_firmware(data) {
 }
 
 /**
- * Return detailed information about a specific ROM type
- * @param {string} name
- * @returns {RomTypeInfo}
- */
-export function rom_type_info(name) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.rom_type_info(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
-    }
-    return takeFromExternrefTable0(ret[0]);
-}
-
-/**
- * Return a list of supported ROM types
- * @returns {string[]}
- */
-export function rom_types() {
-    const ret = wasm.rom_types();
-    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
-    return v1;
-}
-
-/**
  * WASM Library Version
  * @returns {string}
  */
@@ -751,7 +751,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return wasm_bindgen__convert__closures_____invoke__h22d8b7a9f9936ce0(a, state0.b, arg0, arg1);
+                        return wasm_bindgen__convert__closures_____invoke__h48e0ae2f1b2979a4(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -826,7 +826,7 @@ function __wbg_get_imports() {
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
             // Cast intrinsic for `Closure(Closure { dtor_idx: 85, function: Function { arguments: [Externref], shim_idx: 86, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h6d899afadbee2228, wasm_bindgen__convert__closures_____invoke__hd0f95e833ea9e1e2);
+            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__he366b2942902d1b9, wasm_bindgen__convert__closures_____invoke__h733e69718253dccd);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -860,12 +860,12 @@ function __wbg_get_imports() {
     };
 }
 
-function wasm_bindgen__convert__closures_____invoke__hd0f95e833ea9e1e2(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__hd0f95e833ea9e1e2(arg0, arg1, arg2);
+function wasm_bindgen__convert__closures_____invoke__h733e69718253dccd(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h733e69718253dccd(arg0, arg1, arg2);
 }
 
-function wasm_bindgen__convert__closures_____invoke__h22d8b7a9f9936ce0(arg0, arg1, arg2, arg3) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h22d8b7a9f9936ce0(arg0, arg1, arg2, arg3);
+function wasm_bindgen__convert__closures_____invoke__h48e0ae2f1b2979a4(arg0, arg1, arg2, arg3) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h48e0ae2f1b2979a4(arg0, arg1, arg2, arg3);
 }
 
 const ValuePrettyPairFinalization = (typeof FinalizationRegistry === 'undefined')

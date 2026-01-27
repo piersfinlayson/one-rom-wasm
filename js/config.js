@@ -1,4 +1,4 @@
-import init, { version, rom_types, rom_type_info, mcus, mcu_info, boards, board_info, parse_firmware } from '../pkg/onerom_wasm.js';
+import init, { version, chip_types, chip_type_info, mcus, mcu_info, boards, board_info, parse_firmware } from '../pkg/onerom_wasm.js';
 
 await init();
 
@@ -7,7 +7,7 @@ document.getElementById('version').textContent = version();
 
 // Display supported ROM types
 const romList = document.getElementById('romList');
-const roms_list = rom_types();
+const roms_list = chip_types();
 const sorted_roms = roms_list.sort((a, b) => {
     const a_is_23 = a.startsWith('23');
     const b_is_23 = b.startsWith('23');
@@ -19,7 +19,7 @@ const sorted_roms = roms_list.sort((a, b) => {
     return parseInt(a.replace(/^2[37]/, '')) - parseInt(b.replace(/^2[37]/, ''));
 });
 sorted_roms.forEach(rom => {
-    const info = rom_type_info(rom);
+    const info = chip_type_info(rom);
     const row = document.createElement('tr');
     
     // Format control lines info
@@ -35,7 +35,7 @@ sorted_roms.forEach(rom => {
     row.innerHTML = `
         <td>${info.name}</td>
         <td>${info.size_bytes}</td>
-        <td>${info.rom_pins}</td>
+        <td>${info.chip_pins}</td>
         <td class="hoverable" title="${addrMapping}">${info.num_addr_lines} <span class="info-icon">ⓘ</span></td>
         <td>${controlLines}</td>
     `;
@@ -119,7 +119,7 @@ boards_list.forEach(board => {
         <td>${info.name}</td>
         <td>${info.description}</td>
         <td>${info.mcu_family}</td>
-        <td>${info.rom_pins}</td>
+        <td>${info.chip_pins}</td>
         <td class="hoverable" title="${addrMapping}">${info.addr_pins.length} <span class="info-icon">ⓘ</span></td>
         <td class="hoverable" title="${dataMapping}">${info.data_pins.length} <span class="info-icon">ⓘ</span></td>
         <td class="hoverable" title="${selMapping}">${info.sel_pins.length} <span class="info-icon">ⓘ</span></td>
