@@ -338,9 +338,9 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen__closure__destroy__he366b2942902d1b9: (a: number, b: number) => void;
+    readonly wasm_bindgen__closure__destroy__h54ae40463ce6bf2c: (a: number, b: number) => void;
     readonly wasm_bindgen__convert__closures_____invoke__h48e0ae2f1b2979a4: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h733e69718253dccd: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h5cdd55c5648ef158: (a: number, b: number, c: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
