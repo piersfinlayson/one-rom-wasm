@@ -1,8 +1,10 @@
 # Changelog
 
-## v0.3.2 - 2026-??-??
+## v0.3.3 - 2026-??-??
 
+## v0.3.2 - 2026-02-07
 
+Move up to latest crates to properly support 28 pin ROMs with firmware 0.6.3+.
 
 ## v0.3.1 - 2026-02-03
 
