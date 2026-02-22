@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.4 - 2026-??-??
+
+
 ## v0.3.3 - 2026-02-22
 
 Moves up to firmware 0.6.5
