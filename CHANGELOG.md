@@ -1,7 +1,8 @@
 # Changelog
 
-## v0.3.5 - 2026-??-??
+## v0.3.5 - 2026-03-04
 
+Support fire-24-eadb01, a special one off hardware revision.
 
 ## v0.3.4 - 2026-02-26
 
