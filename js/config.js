@@ -1,4 +1,4 @@
-import init, { version, chip_types, chip_type_info, mcus, mcu_info, boards, board_info, parse_firmware } from '../pkg/onerom_wasm.js';
+import init, { version, chip_types, chip_type_info, mcus, mcu_info, boards, board_info, parse_firmware, supported_chip_types, chip_type_aliases, supported_chip_type_aliases } from '../pkg/onerom_wasm.js';
 
 await init();
 
@@ -33,11 +33,12 @@ sorted_roms.forEach(rom => {
         .join(', ');
     
     row.innerHTML = `
-        <td>${info.name}</td>
+        <td>${info.aliases.join(', ')}</td>
         <td>${info.size_bytes}</td>
         <td>${info.chip_pins}</td>
         <td class="hoverable" title="${addrMapping}">${info.num_addr_lines} <span class="info-icon">ⓘ</span></td>
         <td>${controlLines}</td>
+        <td>${info.is_supported ? '✓' : '✗'}</td>
     `;
     
     romTable.appendChild(row);

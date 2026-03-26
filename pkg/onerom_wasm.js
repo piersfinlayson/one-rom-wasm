@@ -175,7 +175,7 @@ export class WasmGenBuilder {
 if (Symbol.dispose) WasmGenBuilder.prototype[Symbol.dispose] = WasmGenBuilder.prototype.free;
 
 /**
- * Result of building a firmware image: (firmware_image, metadata_json)
+ * Result of building a firmware image: (metadata_json, firmware_image)
  */
 export class WasmImages {
     static __wrap(ptr) {
@@ -273,6 +273,17 @@ export function boards_for_mcu_family(family_name) {
     var v2 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v2;
+}
+
+/**
+ * Return a list of all aliases for all chip types
+ * @returns {string[]}
+ */
+export function chip_type_aliases() {
+    const ret = wasm.chip_type_aliases();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -527,7 +538,7 @@ export function mcus_for_mcu_family(family_name) {
 }
 
 /**
- * Parse a firmware image and return the extracted information as a JSON
+ * Parse a firmware image and return the extracted SdrrInfo as a JSON
  * object.  Either pass in:
  * - A complete .bin file
  * - The first 64KB of a flash dump
@@ -540,6 +551,29 @@ export function parse_firmware(data) {
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.parse_firmware(ptr0, len0);
     return ret;
+}
+
+/**
+ * Return a list of all aliases for supported chip types
+ * @returns {string[]}
+ */
+export function supported_chip_type_aliases() {
+    const ret = wasm.supported_chip_type_aliases();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
+}
+
+/**
+ * Return a list of supported ROM types that are supported by the latest
+ * version of One ROM
+ * @returns {string[]}
+ */
+export function supported_chip_types() {
+    const ret = wasm.supported_chip_types();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -751,7 +785,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return wasm_bindgen__convert__closures_____invoke__hd4680ea21377bdcc(a, state0.b, arg0, arg1);
+                        return wasm_bindgen__convert__closures_____invoke__h121f56a0a63d3a9a(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -817,8 +851,8 @@ function __wbg_get_imports() {
             console.warn(arg0);
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { dtor_idx: 85, function: Function { arguments: [Externref], shim_idx: 86, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__hf4b5e92d38978907, wasm_bindgen__convert__closures_____invoke__haec7b660a6511385);
+            // Cast intrinsic for `Closure(Closure { dtor_idx: 88, function: Function { arguments: [Externref], shim_idx: 89, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__he35ed55885a1e80f, wasm_bindgen__convert__closures_____invoke__h2ffd44f11778632b);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -852,15 +886,15 @@ function __wbg_get_imports() {
     };
 }
 
-function wasm_bindgen__convert__closures_____invoke__haec7b660a6511385(arg0, arg1, arg2) {
-    const ret = wasm.wasm_bindgen__convert__closures_____invoke__haec7b660a6511385(arg0, arg1, arg2);
+function wasm_bindgen__convert__closures_____invoke__h2ffd44f11778632b(arg0, arg1, arg2) {
+    const ret = wasm.wasm_bindgen__convert__closures_____invoke__h2ffd44f11778632b(arg0, arg1, arg2);
     if (ret[1]) {
         throw takeFromExternrefTable0(ret[0]);
     }
 }
 
-function wasm_bindgen__convert__closures_____invoke__hd4680ea21377bdcc(arg0, arg1, arg2, arg3) {
-    wasm.wasm_bindgen__convert__closures_____invoke__hd4680ea21377bdcc(arg0, arg1, arg2, arg3);
+function wasm_bindgen__convert__closures_____invoke__h121f56a0a63d3a9a(arg0, arg1, arg2, arg3) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h121f56a0a63d3a9a(arg0, arg1, arg2, arg3);
 }
 
 const ValuePrettyPairFinalization = (typeof FinalizationRegistry === 'undefined')

@@ -45,6 +45,11 @@ export interface DataPin {
  */
 export interface ChipTypeInfo {
     name: string;
+    aliases: string[];
+    chip_function: string;
+    is_plugin: boolean;
+    is_supported: boolean;
+    bit_modes: number[];
     size_bytes: number;
     chip_pins: number;
     num_addr_lines: number;
@@ -158,7 +163,7 @@ export class WasmGenBuilder {
 }
 
 /**
- * Result of building a firmware image: (firmware_image, metadata_json)
+ * Result of building a firmware image: (metadata_json, firmware_image)
  */
 export class WasmImages {
     private constructor();
@@ -187,6 +192,11 @@ export function boards(): string[];
  * Get a list of boards for a specific MCU family
  */
 export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
+
+/**
+ * Return a list of all aliases for all chip types
+ */
+export function chip_type_aliases(): string[];
 
 /**
  * Return detailed information about a specific ROM type
@@ -280,13 +290,24 @@ export function mcus(): string[];
 export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
 
 /**
- * Parse a firmware image and return the extracted information as a JSON
+ * Parse a firmware image and return the extracted SdrrInfo as a JSON
  * object.  Either pass in:
  * - A complete .bin file
  * - The first 64KB of a flash dump
  * - The device's entire flash dump
  */
 export function parse_firmware(data: Uint8Array): Promise<any>;
+
+/**
+ * Return a list of all aliases for supported chip types
+ */
+export function supported_chip_type_aliases(): string[];
+
+/**
+ * Return a list of supported ROM types that are supported by the latest
+ * version of One ROM
+ */
+export function supported_chip_types(): string[];
 
 /**
  * WASM Library Version
@@ -310,6 +331,7 @@ export interface InitOutput {
     readonly board_info: (a: number, b: number) => [number, number, number];
     readonly boards: () => [number, number, number, number];
     readonly boards_for_mcu_family: (a: number, b: number) => [number, number, number, number];
+    readonly chip_type_aliases: () => [number, number];
     readonly chip_type_info: (a: number, b: number) => [number, number, number];
     readonly chip_types: () => [number, number];
     readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
@@ -327,6 +349,8 @@ export interface InitOutput {
     readonly mcus: () => [number, number];
     readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
     readonly parse_firmware: (a: number, b: number) => any;
+    readonly supported_chip_type_aliases: () => [number, number];
+    readonly supported_chip_types: () => [number, number];
     readonly valueprettypair_pretty: (a: number) => [number, number];
     readonly valueprettypair_value: (a: number) => [number, number];
     readonly version: () => [number, number];
@@ -338,9 +362,9 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen__closure__destroy__hf4b5e92d38978907: (a: number, b: number) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__haec7b660a6511385: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__hd4680ea21377bdcc: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__closure__destroy__he35ed55885a1e80f: (a: number, b: number) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h2ffd44f11778632b: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen__convert__closures_____invoke__h121f56a0a63d3a9a: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
