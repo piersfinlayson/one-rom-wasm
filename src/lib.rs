@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use onerom_config::fw::{FirmwareVersion, FirmwareProperties};
 use onerom_config::mcu::Family;
 use onerom_gen::{Builder as GenBuilder, FileData};
-use sdrr_fw_parser::{Parser, readers::MemoryReader};
+use sdrr_fw_parser::{Parser, readers::MemoryReader, readers::RegionKind};
 
 /// Initialize logging and panic hook
 #[wasm_bindgen(start)]
@@ -74,7 +74,7 @@ pub fn versions() -> VersionInfo {
     }
 }
 
-/// Parse a firmware image and return the extracted information as a JSON
+/// Parse a firmware image and return the extracted SdrrInfo as a JSON
 /// object.  Either pass in:
 /// - A complete .bin file
 /// - The first 64KB of a flash dump
@@ -93,6 +93,24 @@ pub async fn parse_firmware(data: Vec<u8>) -> Result<JsValue, JsValue> {
         .map_err(|e| JsValue::from_str(&e))?;
 
     // Serialize to JSON
+    serde_wasm_bindgen::to_value(&info).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// Parse a flash and RAM dump and return the extracted Sdrr as a JSON
+/// object.
+/// - flash_data: Flash dump, starting from the base flash address.  Can be
+///   the entire flash dump, or just the first 64KB.
+/// - rom_data: RAM dump, starting from the base RAM address.  Can be
+///   the entire RAM dump, or just the first 256 bytes (enough to read sdrr_ram_info)
+pub async fn parse_all(flash_data: Vec<u8>, rom_data: Vec<u8>) -> Result<JsValue, JsValue> {
+    let mut reader = MemoryReader::new_of_kind(RegionKind::Flash, flash_data, 0x08000000);
+    reader.add_region(RegionKind::Ram, rom_data, 0x20000000);
+    let mut parser = Parser::new(&mut reader);
+
+    let info = parser
+        .parse()
+        .await;
+
     serde_wasm_bindgen::to_value(&info).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
@@ -151,13 +169,15 @@ pub fn mcu_info(name: String) -> Result<McuInfo, JsValue> {
 #[derive(Serialize, Tsify)]
 #[tsify(into_wasm_abi)]
 pub struct ChipTypeInfo {
-    // Basic metadata
     name: String,
+    aliases: Vec<String>,
+    chip_function: String,
+    is_plugin: bool,
+    is_supported: bool,
+    bit_modes: Vec<u8>,
     size_bytes: usize,
     chip_pins: u8,
     num_addr_lines: usize,
-    
-    // Complete pinout data
     address_pins: Vec<AddressPin>,
     data_pins: Vec<DataPin>,
     control_lines: Vec<ControlLine>,
@@ -211,7 +231,39 @@ pub struct PowerPin {
 pub fn chip_types() -> Vec<String> {
     onerom_config::chip::CHIP_TYPES
         .iter()
+        .filter(|t| !t.is_plugin())
         .map(|t| t.name().to_string())
+        .collect()
+}
+
+/// Return a list of supported ROM types that are supported by the latest
+/// version of One ROM 
+#[wasm_bindgen]
+pub fn supported_chip_types() -> Vec<String> {
+    onerom_config::chip::CHIP_TYPES
+        .iter()
+        .filter(|t| !t.is_plugin() && t.is_supported())
+        .map(|t| t.name().to_string())
+        .collect()
+}
+
+/// Return a list of all aliases for all chip types
+#[wasm_bindgen]
+pub fn chip_type_aliases() -> Vec<String> {
+    onerom_config::chip::CHIP_TYPES
+        .iter()
+        .filter(|t| !t.is_plugin())
+        .flat_map(|t| t.aliases().iter().map(|s| s.to_string()))
+        .collect()
+}
+
+/// Return a list of all aliases for supported chip types
+#[wasm_bindgen]
+pub fn supported_chip_type_aliases() -> Vec<String> {
+    onerom_config::chip::CHIP_TYPES
+        .iter()
+        .filter(|t| !t.is_plugin() && t.is_supported())
+        .flat_map(|t| t.aliases().iter().map(|s| s.to_string()))
         .collect()
 }
 
@@ -269,6 +321,11 @@ pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
 
     let info = ChipTypeInfo {
         name: chip_type.name().to_string(),
+        aliases: chip_type.aliases().iter().map(|s| s.to_string()).collect(),
+        chip_function: format!("{:?}", chip_type.chip_function()),
+        is_plugin: chip_type.is_plugin(),
+        is_supported: chip_type.is_supported(),
+        bit_modes: chip_type.bit_modes().to_vec(),
         size_bytes: chip_type.size_bytes(),
         chip_pins: chip_type.chip_pins(),
         num_addr_lines: chip_type.num_addr_lines(),
@@ -479,7 +536,7 @@ pub struct WasmFileSpec{
     pub set_description: Option<String>,
 }
 
-/// Result of building a firmware image: (firmware_image, metadata_json)
+/// Result of building a firmware image: (metadata_json, firmware_image)
 #[wasm_bindgen]
 #[allow(dead_code)]
 pub struct WasmImages(Vec<u8>, Vec<u8>);
