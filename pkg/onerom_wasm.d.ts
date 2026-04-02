@@ -362,15 +362,15 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen__closure__destroy__he35ed55885a1e80f: (a: number, b: number) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__h2ffd44f11778632b: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h121f56a0a63d3a9a: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h7f44d0234d64f352: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen__convert__closures_____invoke__h08a5157219d5598e: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+    readonly __wbindgen_destroy_closure: (a: number, b: number) => void;
     readonly __externref_table_dealloc: (a: number) => void;
     readonly __externref_drop_slice: (a: number, b: number) => void;
     readonly __wbindgen_start: () => void;
