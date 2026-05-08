@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.9 - 2026-??-??
+
+TBC
+
 ## v0.3.8 - 2026-05-08
 
 Support firmware v0.6.9
