@@ -267,6 +267,18 @@ pub fn supported_chip_type_aliases() -> Vec<String> {
         .collect()
 }
 
+#[wasm_bindgen]
+pub fn extra_chip_types_for_board(board_name: String) -> Vec<String> {
+    if let Some(board) = onerom_config::hw::BOARDS.iter().find(|b| b.name() == board_name) {
+        board.extra_chip_types()
+            .iter()
+            .map(|t| t.name().to_string())
+            .collect()
+    } else {
+        vec![]
+    }
+}
+
 /// Return detailed information about a specific ROM type
 #[wasm_bindgen]
 pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
