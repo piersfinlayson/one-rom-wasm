@@ -208,6 +208,8 @@ export function chip_type_info(name: string): ChipTypeInfo;
  */
 export function chip_types(): string[];
 
+export function extra_chip_types_for_board(board_name: string): string[];
+
 /**
  * Add a retrieved file to the builder
  */
@@ -334,6 +336,7 @@ export interface InitOutput {
     readonly chip_type_aliases: () => [number, number];
     readonly chip_type_info: (a: number, b: number) => [number, number, number];
     readonly chip_types: () => [number, number];
+    readonly extra_chip_types_for_board: (a: number, b: number) => [number, number];
     readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
     readonly gen_build: (a: number, b: any) => [number, number, number];
     readonly gen_build_validation: (a: number, b: any) => [number, number];
@@ -362,8 +365,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h7f44d0234d64f352: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h08a5157219d5598e: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h58e4f4265216b47b: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen__convert__closures_____invoke__h01bd443bd6c87491: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
