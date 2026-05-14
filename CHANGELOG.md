@@ -1,8 +1,8 @@
 # Changelog
 
-## v0.3.9 - 2026-??-??
+## v0.3.9 - 2026-05-14
 
-TBC
+Support firmware v0.6.11 and new 23QL512 ROM type
 
 ## v0.3.8 - 2026-05-08
 
