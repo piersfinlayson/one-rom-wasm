@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.11 - 2026-??-??
+
+
 ## v0.3.10 - 2026-05-26
 
 Add new ROM types
