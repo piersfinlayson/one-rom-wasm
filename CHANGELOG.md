@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.12 - 2026-??-??
+
+
 ## v0.3.11 - 2026-06-02
 
 Firmware v0.6.13 with new ROM and hardware types
