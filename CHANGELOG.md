@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.13 - 2026-07-14
+
+Move to v0.7.0 release train dependencies, bringing in:
+- Plugin support
+
+Does not yet bring in v0.7.0 firmware support, which requires new firmware parsing capabilities.
+
 ## v0.3.12 - 2026-07-02
 
 Firmware v0.6.14 with new ROM and hardware types

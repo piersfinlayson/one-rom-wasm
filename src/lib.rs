@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 use onerom_config::fw::{FirmwareVersion, FirmwareProperties};
 use onerom_config::mcu::Family;
 use onerom_gen::{Builder as GenBuilder, FileData};
-use sdrr_fw_parser::{Parser, readers::MemoryReader, readers::RegionKind};
+use onerom_fw_parser::{Parser, readers::MemoryReader, readers::RegionKind};
 
 /// Initialize logging and panic hook
 #[wasm_bindgen(start)]
@@ -69,7 +69,7 @@ pub fn versions() -> VersionInfo {
         onerom_wasm: env!("CARGO_PKG_VERSION").to_string(),
         onerom_config: onerom_config::crate_version().to_string(),
         onerom_gen: onerom_gen::crate_version().to_string(),
-        sdrr_fw_parser: sdrr_fw_parser::crate_version().to_string(),
+        sdrr_fw_parser: onerom_fw_parser::crate_version().to_string(),
         metadata_version: onerom_gen::metadata_version().to_string(),
     }
 }
@@ -681,4 +681,139 @@ pub fn gen_build_validation(builder: &WasmGenBuilder, properties: JsValue) -> Re
 
     builder.0.build_validation(&props)
         .map_err(|e| format!("Not ready to build: {e:?}"))
+}
+// ============================================================
+// Plugins
+// ============================================================
+//
+// Plugin discovery and compatibility selection for the web programmer. The
+// heavy lifting lives in `onerom-app`; this layer is a thin WASM binding.
+//
+// Fetching is delegated back to JavaScript: `PluginCatalog::load` is given a JS
+// async callback `(url) => Uint8Array`, wrapped as an `onerom_app::PluginFetch`
+// so `onerom-app` orchestrates the manifest fetches while JS performs them. The
+// plugin *binaries* are not fetched here - they are fetched by the existing
+// build pipeline (`gen_file_specs` yields a spec per plugin binary URL, which
+// JS fetches and passes to `gen_add_file`), with SHA-256 verification done in
+// JS against the digest returned by `newest_compatible`.
+
+/// A JavaScript-backed [`onerom_app::PluginFetch`] implementation.
+///
+/// Wraps a JS async callback of the form `(url: string) => Promise<Uint8Array>`.
+/// Single-threaded (WASM), so the non-`Send` `LocalPluginFetch` variant is used.
+struct JsFetch {
+    callback: js_sys::Function,
+}
+
+impl onerom_app::LocalPluginFetch for JsFetch {
+    type Error = String;
+
+    async fn fetch(&self, source: &str) -> Result<Vec<u8>, Self::Error> {
+        // Invoke the JS callback with the URL; it returns a Promise.
+        let promise = self
+            .callback
+            .call1(&JsValue::NULL, &JsValue::from_str(source))
+            .map_err(|e| format!("plugin fetch callback threw: {e:?}"))?;
+
+        // Await the Promise and interpret the resolved value as a Uint8Array.
+        let resolved = wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(promise))
+            .await
+            .map_err(|e| format!("plugin fetch failed for {source}: {e:?}"))?;
+
+        Ok(js_sys::Uint8Array::new(&resolved).to_vec())
+    }
+}
+
+/// Convert an `onerom_app` async error into a JS string error.
+fn plugin_err_to_js(e: onerom_app::Error<String>) -> JsValue {
+    JsValue::from_str(&e.to_string())
+}
+
+/// The compatible release chosen for a plugin, as returned to JavaScript.
+///
+/// Carries everything the web build path needs: the version to display, the
+/// SHA-256 for JS-side verification, and the fully-resolved binary URL to place
+/// into the config and fetch.
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct WasmPluginRelease {
+    pub version: String,
+    pub sha256: String,
+    pub url: String,
+    pub min_fw_version: String,
+}
+
+/// The catalogue of available plugins, with every plugin's releases loaded.
+///
+/// Constructed by [`plugin_catalog`] (which fetches the manifests through the
+/// JS callback). Once built, [`PluginCatalog::plugins`] fills the dropdowns and
+/// [`PluginCatalog::newest_compatible`] answers per-selection compatibility
+/// queries entirely in memory, with no further fetching.
+#[wasm_bindgen]
+pub struct PluginCatalog(onerom_app::Catalogue);
+
+#[wasm_bindgen]
+impl PluginCatalog {
+    /// All plugins, each with its loaded releases, as a JS array.
+    ///
+    /// Each element has `name`, `plugin_type` (`"system_plugin"`/`"user_plugin"`),
+    /// `display_name`, `description`, and `releases` (each with `version`,
+    /// `sha256`, `min_fw_version`, `incompatible_from`, ...).
+    pub fn plugins(&self) -> Result<JsValue, JsValue> {
+        serde_wasm_bindgen::to_value(self.0.plugins())
+            .map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    /// The newest release of `name` compatible with firmware `fw`, or `null`.
+    ///
+    /// `fw` is a `major.minor.patch` string (the firmware version being built
+    /// for). Returns [`WasmPluginRelease`] on success, or JS `null` when the
+    /// plugin has no release compatible with `fw`. Errors only if the plugin
+    /// name is unknown or `fw` is malformed.
+    pub fn newest_compatible(&self, name: String, fw: String) -> Result<JsValue, JsValue> {
+        let plugin = self
+            .0
+            .plugin_by_name(&name)
+            .ok_or_else(|| JsValue::from_str(&format!("unknown plugin '{name}'")))?;
+
+        let fw = FirmwareVersion::try_from_str(&fw)
+            .map_err(|_| JsValue::from_str("invalid firmware version format"))?;
+
+        match onerom_app::newest_compatible(plugin, &fw) {
+            Some(release) => {
+                let out = WasmPluginRelease {
+                    version: release.version.to_string(),
+                    sha256: release.sha256.clone(),
+                    url: plugin.binary_url(release),
+                    min_fw_version: release.min_fw_version.to_string(),
+                };
+                serde_wasm_bindgen::to_value(&out).map_err(|e| JsValue::from_str(&e.to_string()))
+            }
+            None => Ok(JsValue::NULL),
+        }
+    }
+}
+
+/// Fetch the plugin catalogue and every plugin's releases, returning a handle.
+///
+/// `fetch_callback` is a JS async function `(url: string) => Promise<Uint8Array>`
+/// used to fetch the manifests. All fetching happens here, up front; the
+/// returned [`PluginCatalog`] then answers queries without further fetching.
+#[wasm_bindgen]
+pub async fn plugin_catalog(fetch_callback: js_sys::Function) -> Result<PluginCatalog, JsValue> {
+    let fetch = JsFetch {
+        callback: fetch_callback,
+    };
+
+    let mut catalogue = onerom_app::Catalogue::fetch(&fetch)
+        .await
+        .map_err(plugin_err_to_js)?;
+
+    // Tolerate an individual plugin's releases being unreachable: such plugins
+    // keep empty releases (and the JS side omits them from the dropdown, since
+    // a plugin with no releases cannot be selected). Only the initial catalogue
+    // fetch above is fatal - without it there is nothing to show.
+    let _failures = catalogue.load_all_releases_resilient(&fetch).await;
+
+    Ok(PluginCatalog(catalogue))
 }
