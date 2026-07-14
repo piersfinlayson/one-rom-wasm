@@ -130,6 +130,51 @@ export interface WasmFileSpec {
     set_description: string | undefined;
 }
 
+/**
+ * The compatible release chosen for a plugin, as returned to JavaScript.
+ *
+ * Carries everything the web build path needs: the version to display, the
+ * SHA-256 for JS-side verification, and the fully-resolved binary URL to place
+ * into the config and fetch.
+ */
+export interface WasmPluginRelease {
+    version: string;
+    sha256: string;
+    url: string;
+    min_fw_version: string;
+}
+
+
+/**
+ * The catalogue of available plugins, with every plugin's releases loaded.
+ *
+ * Constructed by [`plugin_catalog`] (which fetches the manifests through the
+ * JS callback). Once built, [`PluginCatalog::plugins`] fills the dropdowns and
+ * [`PluginCatalog::newest_compatible`] answers per-selection compatibility
+ * queries entirely in memory, with no further fetching.
+ */
+export class PluginCatalog {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * The newest release of `name` compatible with firmware `fw`, or `null`.
+     *
+     * `fw` is a `major.minor.patch` string (the firmware version being built
+     * for). Returns [`WasmPluginRelease`] on success, or JS `null` when the
+     * plugin has no release compatible with `fw`. Errors only if the plugin
+     * name is unknown or `fw` is malformed.
+     */
+    newest_compatible(name: string, fw: string): any;
+    /**
+     * All plugins, each with its loaded releases, as a JS array.
+     *
+     * Each element has `name`, `plugin_type` (`"system_plugin"`/`"user_plugin"`),
+     * `display_name`, `description`, and `releases` (each with `version`,
+     * `sha256`, `min_fw_version`, `incompatible_from`, ...).
+     */
+    plugins(): any;
+}
 
 export class ValuePrettyPair {
     private constructor();
@@ -301,6 +346,15 @@ export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
 export function parse_firmware(data: Uint8Array): Promise<any>;
 
 /**
+ * Fetch the plugin catalogue and every plugin's releases, returning a handle.
+ *
+ * `fetch_callback` is a JS async function `(url: string) => Promise<Uint8Array>`
+ * used to fetch the manifests. All fetching happens here, up front; the
+ * returned [`PluginCatalog`] then answers queries without further fetching.
+ */
+export function plugin_catalog(fetch_callback: Function): Promise<PluginCatalog>;
+
+/**
  * Return a list of all aliases for supported chip types
  */
 export function supported_chip_type_aliases(): string[];
@@ -325,6 +379,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_plugincatalog_free: (a: number, b: number) => void;
     readonly __wbg_valueprettypair_free: (a: number, b: number) => void;
     readonly __wbg_versioninfo_free: (a: number, b: number) => void;
     readonly __wbg_wasmgenbuilder_free: (a: number, b: number) => void;
@@ -352,6 +407,9 @@ export interface InitOutput {
     readonly mcus: () => [number, number];
     readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
     readonly parse_firmware: (a: number, b: number) => any;
+    readonly plugin_catalog: (a: any) => any;
+    readonly plugincatalog_newest_compatible: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+    readonly plugincatalog_plugins: (a: number) => [number, number, number];
     readonly supported_chip_type_aliases: () => [number, number];
     readonly supported_chip_types: () => [number, number];
     readonly valueprettypair_pretty: (a: number) => [number, number];
@@ -365,8 +423,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h1019b087c3187b46: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h4a70dfea851d3387: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;

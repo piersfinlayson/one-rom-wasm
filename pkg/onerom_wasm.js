@@ -1,5 +1,70 @@
 /* @ts-self-types="./onerom_wasm.d.ts" */
 
+/**
+ * The catalogue of available plugins, with every plugin's releases loaded.
+ *
+ * Constructed by [`plugin_catalog`] (which fetches the manifests through the
+ * JS callback). Once built, [`PluginCatalog::plugins`] fills the dropdowns and
+ * [`PluginCatalog::newest_compatible`] answers per-selection compatibility
+ * queries entirely in memory, with no further fetching.
+ */
+export class PluginCatalog {
+    static __wrap(ptr) {
+        const obj = Object.create(PluginCatalog.prototype);
+        obj.__wbg_ptr = ptr;
+        PluginCatalogFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        PluginCatalogFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_plugincatalog_free(ptr, 0);
+    }
+    /**
+     * The newest release of `name` compatible with firmware `fw`, or `null`.
+     *
+     * `fw` is a `major.minor.patch` string (the firmware version being built
+     * for). Returns [`WasmPluginRelease`] on success, or JS `null` when the
+     * plugin has no release compatible with `fw`. Errors only if the plugin
+     * name is unknown or `fw` is malformed.
+     * @param {string} name
+     * @param {string} fw
+     * @returns {any}
+     */
+    newest_compatible(name, fw) {
+        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(fw, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.plugincatalog_newest_compatible(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+    /**
+     * All plugins, each with its loaded releases, as a JS array.
+     *
+     * Each element has `name`, `plugin_type` (`"system_plugin"`/`"user_plugin"`),
+     * `display_name`, `description`, and `releases` (each with `version`,
+     * `sha256`, `min_fw_version`, `incompatible_from`, ...).
+     * @returns {any}
+     */
+    plugins() {
+        const ret = wasm.plugincatalog_plugins(this.__wbg_ptr);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+}
+if (Symbol.dispose) PluginCatalog.prototype[Symbol.dispose] = PluginCatalog.prototype.free;
+
 export class ValuePrettyPair {
     static __wrap(ptr) {
         const obj = Object.create(ValuePrettyPair.prototype);
@@ -563,6 +628,20 @@ export function parse_firmware(data) {
 }
 
 /**
+ * Fetch the plugin catalogue and every plugin's releases, returning a handle.
+ *
+ * `fetch_callback` is a JS async function `(url: string) => Promise<Uint8Array>`
+ * used to fetch the manifests. All fetching happens here, up front; the
+ * returned [`PluginCatalog`] then answers queries without further fetching.
+ * @param {Function} fetch_callback
+ * @returns {Promise<PluginCatalog>}
+ */
+export function plugin_catalog(fetch_callback) {
+    const ret = wasm.plugin_catalog(fetch_callback);
+    return ret;
+}
+
+/**
  * Return a list of all aliases for supported chip types
  * @returns {string[]}
  */
@@ -793,7 +872,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return wasm_bindgen__convert__closures_____invoke__h4a70dfea851d3387(a, state0.b, arg0, arg1);
+                        return wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -803,6 +882,10 @@ function __wbg_get_imports() {
             } finally {
                 state0.a = 0;
             }
+        },
+        __wbg_plugincatalog_new: function(arg0) {
+            const ret = PluginCatalog.__wrap(arg0);
+            return ret;
         },
         __wbg_prototypesetcall_4770620bbe4688a0: function(arg0, arg1, arg2) {
             Uint8Array.prototype.set.call(getArrayU8FromWasm0(arg0, arg1), arg2);
@@ -847,6 +930,10 @@ function __wbg_get_imports() {
             const ret = typeof window === 'undefined' ? null : window;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
+        __wbg_then_16d107c451e9905d: function(arg0, arg1, arg2) {
+            const ret = arg0.then(arg1, arg2);
+            return ret;
+        },
         __wbg_then_6ec10ae38b3e92f7: function(arg0, arg1) {
             const ret = arg0.then(arg1);
             return ret;
@@ -859,8 +946,8 @@ function __wbg_get_imports() {
             console.warn(arg0);
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 192, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm_bindgen__convert__closures_____invoke__h1019b087c3187b46);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 234, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -894,17 +981,20 @@ function __wbg_get_imports() {
     };
 }
 
-function wasm_bindgen__convert__closures_____invoke__h1019b087c3187b46(arg0, arg1, arg2) {
-    const ret = wasm.wasm_bindgen__convert__closures_____invoke__h1019b087c3187b46(arg0, arg1, arg2);
+function wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_(arg0, arg1, arg2) {
+    const ret = wasm.wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_(arg0, arg1, arg2);
     if (ret[1]) {
         throw takeFromExternrefTable0(ret[0]);
     }
 }
 
-function wasm_bindgen__convert__closures_____invoke__h4a70dfea851d3387(arg0, arg1, arg2, arg3) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h4a70dfea851d3387(arg0, arg1, arg2, arg3);
+function wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_(arg0, arg1, arg2, arg3) {
+    wasm.wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_(arg0, arg1, arg2, arg3);
 }
 
+const PluginCatalogFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_plugincatalog_free(ptr, 1));
 const ValuePrettyPairFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_valueprettypair_free(ptr, 1));

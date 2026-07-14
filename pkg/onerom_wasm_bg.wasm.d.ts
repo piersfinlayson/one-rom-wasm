@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const __wbg_plugincatalog_free: (a: number, b: number) => void;
 export const __wbg_valueprettypair_free: (a: number, b: number) => void;
 export const __wbg_versioninfo_free: (a: number, b: number) => void;
 export const __wbg_wasmgenbuilder_free: (a: number, b: number) => void;
@@ -28,6 +29,9 @@ export const mcu_info: (a: number, b: number) => [number, number, number];
 export const mcus: () => [number, number];
 export const mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
 export const parse_firmware: (a: number, b: number) => any;
+export const plugin_catalog: (a: any) => any;
+export const plugincatalog_newest_compatible: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+export const plugincatalog_plugins: (a: number) => [number, number, number];
 export const supported_chip_type_aliases: () => [number, number];
 export const supported_chip_types: () => [number, number];
 export const valueprettypair_pretty: (a: number) => [number, number];
@@ -41,8 +45,8 @@ export const versioninfo_sdrr_fw_parser: (a: number) => [number, number];
 export const versions: () => number;
 export const wasmimages_firmware_images: (a: number) => [number, number];
 export const wasmimages_metadata: (a: number) => [number, number];
-export const wasm_bindgen__convert__closures_____invoke__h1019b087c3187b46: (a: number, b: number, c: any) => [number, number];
-export const wasm_bindgen__convert__closures_____invoke__h4a70dfea851d3387: (a: number, b: number, c: any, d: any) => void;
+export const wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_: (a: number, b: number, c: any) => [number, number];
+export const wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
 export const __wbindgen_malloc: (a: number, b: number) => number;
 export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
 export const __wbindgen_exn_store: (a: number) => void;
