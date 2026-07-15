@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0 - 2026-07-15
+
+Add v0.7.0 firmware parsing support, to enable onerom.org/web to support it.
+
 ## v0.3.13 - 2026-07-14
 
 Move to v0.7.0 release train dependencies, bringing in:
