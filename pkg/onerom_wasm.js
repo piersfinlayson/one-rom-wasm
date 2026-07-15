@@ -442,7 +442,6 @@ export function gen_build_validation(builder, properties) {
  *
  * Version: "0.3.4" or "0.5.1.1" format
  * Family: "STM32F4" and "RP2350"
- *
  * @param {string} version
  * @param {string} family
  * @param {string} config_json
@@ -612,18 +611,28 @@ export function mcus_for_mcu_family(family_name) {
 }
 
 /**
- * Parse a firmware image and return the extracted SdrrInfo as a JSON
- * object.  Either pass in:
- * - A complete .bin file
- * - The first 64KB of a flash dump
- * - The device's entire flash dump
- * @param {Uint8Array} data
- * @returns {Promise<any>}
+ * Parse a firmware image into a [`DeviceSummary`].
+ *
+ * Accepts a complete `.bin`, the first 64KB of a flash dump, or an entire
+ * flash dump. Handles both pre-v0.7.0 (original) and v0.7.0+ (schema) firmware
+ * via `Parser::parse_device`.
+ *
+ * The plugin/ROM list comes from flash. Whenever the parser follows a runtime
+ * pointer (into RAM), `read_cb` is invoked to fetch those bytes on demand —
+ * this is what lets the summary report `running` and mark the active ROM. On a
+ * stopped device the runtime magic will not match and the runtime is tolerantly
+ * dropped, so the list still parses.
+ *
+ * `read_cb` is a JS `async (addr: number, len: number) => Uint8Array` returning
+ * exactly `len` bytes at `addr` (see [`CallbackReader`]).
+ * @param {Uint8Array} flash
+ * @param {Function} read_cb
+ * @returns {Promise<DeviceSummary>}
  */
-export function parse_firmware(data) {
-    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+export function parse_firmware(flash, read_cb) {
+    const ptr0 = passArray8ToWasm0(flash, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.parse_firmware(ptr0, len0);
+    const ret = wasm.parse_firmware(ptr0, len0, read_cb);
     return ret;
 }
 
@@ -638,6 +647,31 @@ export function parse_firmware(data) {
  */
 export function plugin_catalog(fetch_callback) {
     const ret = wasm.plugin_catalog(fetch_callback);
+    return ret;
+}
+
+/**
+ * Resolve a device plugin slot's image source to display information.
+ *
+ * `slot_index` is the plugin's slot (0 = system, 1 = user); since a device's
+ * plugins are reported in slot order, the caller can pass the plugin's index
+ * within the plugins list. `source` is the image source the device recorded.
+ * `fetch_callback` is a JS async function `(url: string) => Promise<Uint8Array>`,
+ * used only for official plugins, to fetch the release manifest for the display
+ * name and description.
+ *
+ * The manifest fetch is best-effort: on any failure the label falls back to the
+ * slug, so this never rejects on a network error. Returns JS `null` only when
+ * `slot_index` is not a plugin slot.
+ * @param {number} slot_index
+ * @param {string} source
+ * @param {Function} fetch_callback
+ * @returns {Promise<any>}
+ */
+export function resolve_plugin_label(slot_index, source, fetch_callback) {
+    const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.resolve_plugin_label(slot_index, ptr0, len0, fetch_callback);
     return ret;
 }
 
@@ -782,6 +816,10 @@ function __wbg_get_imports() {
             const ret = arg0.call(arg1, arg2);
             return ret;
         }, arguments); },
+        __wbg_call_e3b662382210db98: function() { return handleError(function (arg0, arg1, arg2, arg3) {
+            const ret = arg0.call(arg1, arg2, arg3);
+            return ret;
+        }, arguments); },
         __wbg_debug_87fd9b1a625b7efb: function(arg0) {
             console.debug(arg0);
         },
@@ -872,7 +910,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_(a, state0.b, arg0, arg1);
+                        return wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined_______true_(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -946,8 +984,8 @@ function __wbg_get_imports() {
             console.warn(arg0);
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 234, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 253, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___wasm_bindgen_f2b15115add473a0___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_f2b15115add473a0___JsError___true_);
             return ret;
         },
         __wbindgen_cast_0000000000000002: function(arg0) {
@@ -981,15 +1019,15 @@ function __wbg_get_imports() {
     };
 }
 
-function wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_(arg0, arg1, arg2) {
-    const ret = wasm.wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_(arg0, arg1, arg2);
+function wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___wasm_bindgen_f2b15115add473a0___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_f2b15115add473a0___JsError___true_(arg0, arg1, arg2) {
+    const ret = wasm.wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___wasm_bindgen_f2b15115add473a0___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_f2b15115add473a0___JsError___true_(arg0, arg1, arg2);
     if (ret[1]) {
         throw takeFromExternrefTable0(ret[0]);
     }
 }
 
-function wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_(arg0, arg1, arg2, arg3) {
-    wasm.wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_(arg0, arg1, arg2, arg3);
+function wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined_______true_(arg0, arg1, arg2, arg3) {
+    wasm.wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined_______true_(arg0, arg1, arg2, arg3);
 }
 
 const PluginCatalogFinalization = (typeof FinalizationRegistry === 'undefined')

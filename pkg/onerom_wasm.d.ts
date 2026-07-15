@@ -1,6 +1,55 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+ * A plugin\'s resolved display information, as returned to JavaScript.
+ *
+ * `label` is always present and displayable: the manifest display name for an
+ * official plugin, or the file stem for a local/sideloaded one. `official`
+ * distinguishes the two. `version` and `description` are populated only for an
+ * official plugin, and only when its release manifest was reachable.
+ */
+export interface WasmPluginLabel {
+    /**
+     * Human-readable label (manifest display name, or file stem).
+     */
+    label: string;
+    /**
+     * The image source the device recorded (echoed back for display).
+     */
+    source: string;
+    /**
+     * Whether this is an official (images.onerom.org manifest) plugin.
+     */
+    official: boolean;
+    /**
+     * Version, for official plugins only.
+     */
+    version: string | undefined;
+    /**
+     * Description, for official plugins only (when the manifest was reachable).
+     */
+    description: string | undefined;
+}
+
+/**
+ * A single ROM or plugin entry in a [`DeviceSummary`].
+ */
+export interface RomSummary {
+    /**
+     * Filename or URL if the firmware recorded one, else the ROM type.
+     */
+    label: string;
+    /**
+     * Whether this entry\'s slot is the one currently being served.
+     */
+    active: boolean;
+    /**
+     * User-facing ROM number (plugins excluded); `None` for plugins.
+     */
+    index: number | undefined;
+}
+
+/**
  * Address pin mapping
  */
 export interface AddressPin {
@@ -144,6 +193,68 @@ export interface WasmPluginRelease {
     min_fw_version: string;
 }
 
+/**
+ * Web-focused summary of a parsed One ROM device.
+ *
+ * Everything the browser tool needs to render the device panel, flattened
+ * across both firmware generations. `dump` carries the full parse as JSON for
+ * the details view.
+ */
+export interface DeviceSummary {
+    /**
+     * Firmware version, \"major.minor.patch\".
+     */
+    version: string | undefined;
+    /**
+     * MCU name (e.g. \"RP2350\", \"F411RE\").
+     */
+    mcu: string | undefined;
+    /**
+     * Board model (\"fire\" / \"ice\").
+     */
+    model: string | undefined;
+    /**
+     * Hardware revision / board name (e.g. \"fire-28-c\").
+     */
+    hw_rev: string | undefined;
+    /**
+     * True if the firmware parsed with non-fatal errors.
+     */
+    corrupt: boolean;
+    /**
+     * Human-readable non-fatal parse errors.
+     */
+    parse_errors: string[];
+    /**
+     * Whether the device can run One ROM firmware over USB (has the USB
+     * system plugin).
+     */
+    can_run: boolean;
+    /**
+     * Whether runtime info was present (device was running when read).
+     * Requires RAM to have been supplied; always false for a flash-only parse.
+     */
+    running: boolean;
+    /**
+     * Plugin entries (system, user), in slot order.
+     */
+    plugins: RomSummary[];
+    /**
+     * User ROM entries, in slot order.
+     */
+    roms: RomSummary[];
+    /**
+     * For pre-v0.5.0 original firmware read from a partial dump: the full chip
+     * size to re-read, in bytes. `None` otherwise.
+     */
+    full_reread_size: number | undefined;
+    /**
+     * Full parse serialised as JSON, for the details view. Externally tagged
+     * by format (`Original` / `Schema`).
+     */
+    dump: string;
+}
+
 
 /**
  * The catalogue of available plugins, with every plugin's releases loaded.
@@ -282,7 +393,6 @@ export function gen_build_validation(builder: WasmGenBuilder, properties: any): 
  *
  * Version: "0.3.4" or "0.5.1.1" format
  * Family: "STM32F4" and "RP2350"
- *
  */
 export function gen_builder_from_json(version: string, family: string, config_json: string): WasmGenBuilder;
 
@@ -337,13 +447,22 @@ export function mcus(): string[];
 export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
 
 /**
- * Parse a firmware image and return the extracted SdrrInfo as a JSON
- * object.  Either pass in:
- * - A complete .bin file
- * - The first 64KB of a flash dump
- * - The device's entire flash dump
+ * Parse a firmware image into a [`DeviceSummary`].
+ *
+ * Accepts a complete `.bin`, the first 64KB of a flash dump, or an entire
+ * flash dump. Handles both pre-v0.7.0 (original) and v0.7.0+ (schema) firmware
+ * via `Parser::parse_device`.
+ *
+ * The plugin/ROM list comes from flash. Whenever the parser follows a runtime
+ * pointer (into RAM), `read_cb` is invoked to fetch those bytes on demand —
+ * this is what lets the summary report `running` and mark the active ROM. On a
+ * stopped device the runtime magic will not match and the runtime is tolerantly
+ * dropped, so the list still parses.
+ *
+ * `read_cb` is a JS `async (addr: number, len: number) => Uint8Array` returning
+ * exactly `len` bytes at `addr` (see [`CallbackReader`]).
  */
-export function parse_firmware(data: Uint8Array): Promise<any>;
+export function parse_firmware(flash: Uint8Array, read_cb: Function): Promise<DeviceSummary>;
 
 /**
  * Fetch the plugin catalogue and every plugin's releases, returning a handle.
@@ -353,6 +472,22 @@ export function parse_firmware(data: Uint8Array): Promise<any>;
  * returned [`PluginCatalog`] then answers queries without further fetching.
  */
 export function plugin_catalog(fetch_callback: Function): Promise<PluginCatalog>;
+
+/**
+ * Resolve a device plugin slot's image source to display information.
+ *
+ * `slot_index` is the plugin's slot (0 = system, 1 = user); since a device's
+ * plugins are reported in slot order, the caller can pass the plugin's index
+ * within the plugins list. `source` is the image source the device recorded.
+ * `fetch_callback` is a JS async function `(url: string) => Promise<Uint8Array>`,
+ * used only for official plugins, to fetch the release manifest for the display
+ * name and description.
+ *
+ * The manifest fetch is best-effort: on any failure the label falls back to the
+ * slug, so this never rejects on a network error. Returns JS `null` only when
+ * `slot_index` is not a plugin slot.
+ */
+export function resolve_plugin_label(slot_index: number, source: string, fetch_callback: Function): Promise<any>;
 
 /**
  * Return a list of all aliases for supported chip types
@@ -406,10 +541,11 @@ export interface InitOutput {
     readonly mcu_info: (a: number, b: number) => [number, number, number];
     readonly mcus: () => [number, number];
     readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
-    readonly parse_firmware: (a: number, b: number) => any;
+    readonly parse_firmware: (a: number, b: number, c: any) => any;
     readonly plugin_catalog: (a: any) => any;
     readonly plugincatalog_newest_compatible: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
     readonly plugincatalog_plugins: (a: number) => [number, number, number];
+    readonly resolve_plugin_label: (a: number, b: number, c: number, d: any) => any;
     readonly supported_chip_type_aliases: () => [number, number];
     readonly supported_chip_types: () => [number, number];
     readonly valueprettypair_pretty: (a: number) => [number, number];
@@ -423,8 +559,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___wasm_bindgen_19e00ef6bdda6b57___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_19e00ef6bdda6b57___JsError___true_: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen_19e00ef6bdda6b57___convert__closures_____invoke___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined___js_sys_a831d958114e6429___Function_fn_wasm_bindgen_19e00ef6bdda6b57___JsValue_____wasm_bindgen_19e00ef6bdda6b57___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___wasm_bindgen_f2b15115add473a0___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_f2b15115add473a0___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
