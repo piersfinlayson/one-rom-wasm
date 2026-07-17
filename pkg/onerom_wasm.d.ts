@@ -36,7 +36,11 @@ export interface WasmPluginLabel {
  */
 export interface RomSummary {
     /**
-     * Filename or URL if the firmware recorded one, else the ROM type.
+     * Display label: \"filename (ROM type)\" where the firmware recorded a
+     * filename, else the ROM type on its own.
+     *
+     * Plugins carry just their filename or URL: their type is always one of
+     * the plugin types, which adds nothing beside a resolved plugin name.
      */
     label: string;
     /**
@@ -559,8 +563,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___wasm_bindgen_f2b15115add473a0___JsValue__core_7d5f0a2ba6a62c33___result__Result_____wasm_bindgen_f2b15115add473a0___JsError___true_: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen_f2b15115add473a0___convert__closures_____invoke___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined___js_sys_5a762a4c5112077c___Function_fn_wasm_bindgen_f2b15115add473a0___JsValue_____wasm_bindgen_f2b15115add473a0___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_450182c5948df29b___convert__closures_____invoke___wasm_bindgen_450182c5948df29b___JsValue__core_9b3796e30d99ddb7___result__Result_____wasm_bindgen_450182c5948df29b___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_450182c5948df29b___convert__closures_____invoke___js_sys_dd8926ea80deb88e___Function_fn_wasm_bindgen_450182c5948df29b___JsValue_____wasm_bindgen_450182c5948df29b___sys__Undefined___js_sys_dd8926ea80deb88e___Function_fn_wasm_bindgen_450182c5948df29b___JsValue_____wasm_bindgen_450182c5948df29b___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
