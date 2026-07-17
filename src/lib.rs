@@ -119,7 +119,11 @@ pub struct DeviceSummary {
 #[derive(Serialize, Tsify)]
 #[tsify(into_wasm_abi)]
 pub struct RomSummary {
-    /// Filename or URL if the firmware recorded one, else the ROM type.
+    /// Display label: "filename (ROM type)" where the firmware recorded a
+    /// filename, else the ROM type on its own.
+    ///
+    /// Plugins carry just their filename or URL: their type is always one of
+    /// the plugin types, which adds nothing beside a resolved plugin name.
     pub label: String,
     /// Whether this entry's slot is the one currently being served.
     pub active: bool,
@@ -277,10 +281,18 @@ fn device_summary(dev: &ParsedDevice) -> Result<DeviceSummary, String> {
         let index = slot.user_index;
         let kind = slot.kind;
         for rom in slot.roms() {
-            let label = rom
-                .filename
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| rom.rom_type.into_owned());
+            // The ROM type goes alongside the filename, not instead of it: the
+            // type is what says how the ROM will be served, and preferring the
+            // filename hid it on every ROM whose firmware recorded a name -
+            // which is most of them.
+            //
+            // Plugins keep a bare label: their type is always a plugin type,
+            // which says nothing useful next to the plugin's own name.
+            let label = match (rom.filename, kind) {
+                (Some(f), SlotKind::Rom) => format!("{} ({})", f, rom.rom_type),
+                (Some(f), SlotKind::Plugin) => f.to_string(),
+                (None, _) => rom.rom_type.into_owned(),
+            };
             let entry = RomSummary {
                 label,
                 active,

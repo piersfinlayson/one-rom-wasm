@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1 - 2026-07-17
+
+Report ROM filename _and_ type in RomSummary.
+
 ## v0.4.0 - 2026-07-15
 
 Add v0.7.0 firmware parsing support, to enable onerom.org/web to support it.
