@@ -34,6 +34,22 @@ diagram. A generic `jumpers.html` viewer draws any board's physical header from
 this data — every pad in its position (pin numbers, roles, GPIOs, SWD
 multiplexing, X pads). Additive; no change to existing `board_info()` fields.
 
+Add `image_size(board, chip_type, version)`, returning the flash footprint (in
+bytes) of one image of `chip_type` on `board` — the v2 slot size that the ROM
+Slot Builder's flash-usage tally needs per slot, and the number
+`docs/COMPATIBILITY.md`'s "Image size" column tabulates. It can far exceed the
+ROM's own capacity, so it is not `chip_type_info().size_bytes`. Computed via
+`onerom-gen`'s `check_chip_on_board`; an unsupported chip/board combination, or a
+malformed board/chip/version, returns a clean JS error (no panic). `version` is
+parsed and validated but does not affect the result (the v2 footprint is board +
+chip only); it is kept for API symmetry and future-proofing.
+
+Add `min_schema_version()`, returning the v2 (schema) firmware-version floor as
+`"major.minor.patch"` (currently `"0.7.0"`), read from
+`onerom-metadata::MIN_SCHEMA_VERSION`. The site uses it to gate the
+firmware-version picker (and the v2-only flash-usage tally) to v2 firmware
+without hardcoding the version.
+
 ## v0.4.1 - 2026-07-17
 
 Report ROM filename _and_ type in RomSummary.

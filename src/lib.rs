@@ -653,6 +653,52 @@ pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
     Ok(info)
 }
 
+/// Flash footprint, in bytes, of one image of `chip_type` on `board`.
+///
+/// This is the v2 slot size — `2^num_addr_pins * word_bytes` — which is what the
+/// ROM Slot Builder's flash-usage tally needs per slot, and the number
+/// `docs/COMPATIBILITY.md`'s "Image size" column tabulates. It can far exceed the
+/// ROM's own capacity, so it is not the same as `ChipType::size_bytes()`.
+///
+/// Computed via `onerom_gen::compat::check_chip_on_board`, which returns `None`
+/// for an unsupported chip/board combination — surfaced here as a clean JS error.
+///
+/// `version` is parsed and validated but unused in the maths: the v2 footprint is
+/// determined by board + chip alone. It is kept in the signature for API symmetry
+/// with the other builder bindings and to leave room for future version-dependent
+/// sizing.
+#[wasm_bindgen]
+pub fn image_size(board: String, chip_type: String, version: String) -> Result<u32, JsValue> {
+    let board_val = onerom_config::hw::Board::try_from_str(&board)
+        .ok_or_else(|| JsValue::from_str(&format!("Unknown board: {}", board)))?;
+    let chip = onerom_config::chip::ChipType::try_from_str(&chip_type)
+        .ok_or_else(|| JsValue::from_str(&format!("Unknown ROM type: {}", chip_type)))?;
+    let _version = FirmwareVersion::try_from_str(&version)
+        .map_err(|_| JsValue::from_str("Invalid firmware version format"))?;
+
+    onerom_gen::compat::check_chip_on_board(board_val, chip)
+        .map(|r| r.slot_size_bytes)
+        .ok_or_else(|| {
+            JsValue::from_str(&format!(
+                "{} is not supported on {}",
+                chip_type,
+                board_val.name()
+            ))
+        })
+}
+
+/// The v2 (schema) firmware-version floor, as "major.minor.patch".
+///
+/// Sourced from `onerom_metadata::MIN_SCHEMA_VERSION` — the same constant
+/// `onerom-fw-parser` branches on to tell v2 firmware from the pre-v0.7.0 layout.
+/// The site uses it to gate the firmware-version picker (and the flash-usage
+/// tally, which is v2-only) to v2 firmware without hardcoding the version.
+#[wasm_bindgen]
+pub fn min_schema_version() -> String {
+    let v = onerom_metadata::MIN_SCHEMA_VERSION;
+    format!("{}.{}.{}", v.major(), v.minor(), v.patch())
+}
+
 // PCB/Board
 
 /// One ROM PCB/Board information structure
