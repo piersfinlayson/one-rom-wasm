@@ -462,7 +462,10 @@ pub struct DataPin {
 pub struct ControlLine {
     name: String,
     pin: u8,
-    configurable: bool, // true = mask-programmable, false = fixed active-low
+    // "configurable"      = mask-programmable, user picks the polarity
+    // "fixed_active_low"  = polarity fixed low by the silicon (JEDEC /CE, /OE)
+    // "fixed_active_high" = polarity fixed high by the silicon (e.g. HM7641 CS3/CS4)
+    cs_type: String,
 }
 
 /// Programming pin mapping
@@ -538,6 +541,36 @@ pub fn extra_chip_types_for_board(board_name: String) -> Vec<String> {
     }
 }
 
+/// A selectable ROM image file format, for building the format picker.
+///
+/// `value` is the string the config's `format` field expects (e.g. `"binary"`,
+/// `"ihex"`); `label` is the human-readable name; `is_default` marks the format
+/// used when none is specified (raw binary). Enumerated from `onerom-gen`, so a
+/// new format added there appears here - and in the UI - with no further work.
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct FileFormatInfo {
+    pub value: String,
+    pub label: String,
+    pub is_default: bool,
+}
+
+/// Return the supported ROM image file formats, in display order.
+#[wasm_bindgen]
+pub fn file_formats() -> Vec<FileFormatInfo> {
+    onerom_gen::FileFormat::supported_values()
+        .iter()
+        .map(|f| FileFormatInfo {
+            value: serde_json::to_string(f)
+                .unwrap()
+                .trim_matches('"')
+                .to_string(),
+            label: f.display_name().to_string(),
+            is_default: f.is_binary(),
+        })
+        .collect()
+}
+
 /// Return detailed information about a specific ROM type
 #[wasm_bindgen]
 pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
@@ -564,7 +597,12 @@ pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
         .map(|cl| ControlLine {
             name: cl.name.to_string(),
             pin: cl.pin,
-            configurable: cl.line_type == onerom_config::chip::ControlLineType::Configurable,
+            cs_type: match cl.line_type {
+                onerom_config::chip::ControlLineType::Configurable => "configurable",
+                onerom_config::chip::ControlLineType::FixedActiveLow => "fixed_active_low",
+                onerom_config::chip::ControlLineType::FixedActiveHigh => "fixed_active_high",
+            }
+            .to_string(),
         })
         .collect();
 
@@ -648,6 +686,59 @@ pub struct BoardInfo {
     // Capabilities
     has_usb: bool,
     supports_multi_chip_sets: bool,
+
+    // Physical jumper header, column by column (None if this board's header
+    // layout has not yet been characterised, in which case a consumer should
+    // fall back to a generic description rather than drawing a wireframe).
+    jumper_header: Option<JumperHeaderInfo>,
+}
+
+/// Physical jumper-header descriptor (mirrors `onerom_config::hw::JumperHeader`)
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct JumperHeaderInfo {
+    /// Columns present on the header, in ascending `col` order. Absent columns
+    /// are omitted, so present columns keep their absolute drawn position.
+    columns: Vec<HeaderColumnInfo>,
+}
+
+/// One column of the jumper header
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct HeaderColumnInfo {
+    /// Absolute column position, 1-based from the board's left edge
+    col: u8,
+    /// Top-row pad: role tokens (e.g. `["sel_c","swclk"]`) or `["np"]`/`["nc"]`
+    row1: Vec<String>,
+    /// Bottom-row pad
+    row2: Vec<String>,
+    /// Optional third-row pad (X pins), present only where one exists
+    row3: Option<Vec<String>>,
+}
+
+fn header_role_token(role: &onerom_config::hw::HeaderRole) -> String {
+    use onerom_config::hw::HeaderRole::*;
+    match role {
+        Power5V => "5v".to_string(),
+        Gnd => "gnd".to_string(),
+        Run => "run".to_string(),
+        Bootsel => "bootsel".to_string(),
+        Select(b) => format!("sel_{}", (b'a' + *b) as char),
+        Swclk => "swclk".to_string(),
+        Swdio => "swdio".to_string(),
+        X1 => "x1".to_string(),
+        X2 => "x2".to_string(),
+        Addr(n) => format!("a{}", n),
+    }
+}
+
+fn header_slot_tokens(slot: &onerom_config::hw::HeaderSlot) -> Vec<String> {
+    use onerom_config::hw::HeaderSlot::*;
+    match slot {
+        NotPopulated => vec!["np".to_string()],
+        NotConnected => vec!["nc".to_string()],
+        Roles(roles) => roles.iter().map(header_role_token).collect(),
+    }
 }
 
 /// Return a list of supported PCBs/Boards
@@ -701,6 +792,19 @@ pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
 
         has_usb: board.has_usb(),
         supports_multi_chip_sets: board.supports_multi_chip_sets(),
+
+        jumper_header: board.jumper_header().map(|h| JumperHeaderInfo {
+            columns: h
+                .columns
+                .iter()
+                .map(|c| HeaderColumnInfo {
+                    col: c.col,
+                    row1: header_slot_tokens(&c.row1),
+                    row2: header_slot_tokens(&c.row2),
+                    row3: c.row3.as_ref().map(header_slot_tokens),
+                })
+                .collect(),
+        }),
     };
 
     Ok(info)

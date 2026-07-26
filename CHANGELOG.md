@@ -1,5 +1,39 @@
 # Changelog
 
+## v0.5.0 - 2026-??-??
+
+TODO - move Cargo.toml dependencies back to crates.io versions, and remove the local path overrides.
+
+Expose fixed chip-select polarity in `chip_type_info`. The `ControlLine.configurable`
+boolean is replaced by a `cs_type` string — `"configurable"`, `"fixed_active_low"`,
+or `"fixed_active_high"` — so consumers can distinguish fixed active-high CS lines
+(e.g. the HM7641's CS3/CS4) from fixed active-low ones. The old boolean collapsed
+both fixed polarities into one, so a fixed active-high line was reported as active-low.
+
+This is a non-backwards-compatible change to the `chip_type_info` output: replace
+`line.configurable` with `line.cs_type === 'configurable'`.
+
+Move up to onerom-gen with Intel HEX (ihex) ROM image support, so the web
+programmer can build firmware from an Intel HEX file. Decoding happens in
+onerom-gen during the build, so the site simply carries the new
+`format`/`load_address` chip keys in the config it emits.
+
+Also add a `file_formats()` export listing the ROM image file formats onerom-gen
+supports (value, label, default), so the site can build its File Format picker
+from the crate rather than hard-coding the options.
+
+Expose the physical jumper-header descriptor on `board_info()`. `BoardInfo` gains
+an optional `jumper_header` field (`JumperHeaderInfo` / `HeaderColumnInfo`) that
+mirrors `onerom-config`'s new `Board::jumper_header()`: an ordered list of header
+columns (1-based, left-to-right), each with `row1`/`row2` and optional `row3` pad
+carrying role tokens (`5v`, `gnd`, `run`, `bootsel`, `sel_a`..`sel_e`, `swclk`,
+`swdio`, `x1`, `x2`, or `nc`/`np`). It is `undefined` for boards whose header has
+not yet been characterised, so a consumer falls back to a generic description.
+This lets the ROM Slot Builder draw an accurate per-board image-select jumper
+diagram. A generic `jumpers.html` viewer draws any board's physical header from
+this data — every pad in its position (pin numbers, roles, GPIOs, SWD
+multiplexing, X pads). Additive; no change to existing `board_info()` fields.
+
 ## v0.4.1 - 2026-07-17
 
 Report ROM filename _and_ type in RomSummary.
