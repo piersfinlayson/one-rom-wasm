@@ -15,15 +15,11 @@ name = "onerom_wasm"
 path = "src/lib.rs"
 
 [dependencies]
-# Temporary development path deps against the local one-rom tree, so the web
-# programmer can be built against in-flight (committed but unpublished) crates -
-# notably onerom-gen's Intel HEX support. Revert to the published versions
-# before release.
-onerom-app = { path = "/Users/pdf/builds/one-rom-temp/rust/app" }
-onerom-config = { path = "/Users/pdf/builds/one-rom-temp/rust/config" }
-onerom-gen = { path = "/Users/pdf/builds/one-rom-temp/rust/gen" }
-onerom-metadata = { path = "/Users/pdf/builds/one-rom-temp/rust/metadata" }
-onerom-fw-parser = { path = "/Users/pdf/builds/one-rom-temp/rust/fw-parser", default-features = false }
+onerom-app = { version = "0.2.0" }
+onerom-config = { version = "0.6.0" }
+onerom-gen = { version = "0.7.0" }
+onerom-metadata = { version = "0.1.4" }
+onerom-fw-parser = { version = "0.8.0", default-features = false }
 airfrog-rpc = { version="^0.1.2" }
 
 console_error_panic_hook = "0.1"

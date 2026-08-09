@@ -1,8 +1,9 @@
 # Changelog
 
-## v0.5.0 - 2026-??-??
+## v0.5.0 - 2026-08-09
 
-TODO - move Cargo.toml dependencies back to crates.io versions, and remove the local path overrides.
+Move up to the published onerom crates: onerom-app 0.2.0, onerom-config 0.6.0,
+onerom-gen 0.7.0, onerom-metadata 0.1.4 and onerom-fw-parser 0.8.0.
 
 Expose fixed chip-select polarity in `chip_type_info`. The `ControlLine.configurable`
 boolean is replaced by a `cs_type` string — `"configurable"`, `"fixed_active_low"`,

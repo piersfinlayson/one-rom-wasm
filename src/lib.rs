@@ -660,8 +660,9 @@ pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
 /// `docs/COMPATIBILITY.md`'s "Image size" column tabulates. It can far exceed the
 /// ROM's own capacity, so it is not the same as `ChipType::size_bytes()`.
 ///
-/// Computed via `onerom_gen::compat::check_chip_on_board`, which returns `None`
-/// for an unsupported chip/board combination — surfaced here as a clean JS error.
+/// Computed via `onerom_gen::compat::check_chip_set_on_board` for a single-chip
+/// slot, which errors for an unsupported chip/board combination — surfaced here
+/// as a clean JS error.
 ///
 /// `version` is parsed and validated but unused in the maths: the v2 footprint is
 /// determined by board + chip alone. It is kept in the signature for API symmetry
@@ -676,15 +677,21 @@ pub fn image_size(board: String, chip_type: String, version: String) -> Result<u
     let _version = FirmwareVersion::try_from_str(&version)
         .map_err(|_| JsValue::from_str("Invalid firmware version format"))?;
 
-    onerom_gen::compat::check_chip_on_board(board_val, chip)
-        .map(|r| r.slot_size_bytes)
-        .ok_or_else(|| {
-            JsValue::from_str(&format!(
-                "{} is not supported on {}",
-                chip_type,
-                board_val.name()
-            ))
-        })
+    onerom_gen::compat::check_chip_set_on_board(
+        board_val,
+        chip,
+        onerom_gen::image::ChipSetType::Single,
+        1,
+        onerom_gen::compat::default_cs_config(chip),
+    )
+    .map(|r| r.slot_size_bytes)
+    .map_err(|_| {
+        JsValue::from_str(&format!(
+            "{} is not supported on {}",
+            chip_type,
+            board_val.name()
+        ))
+    })
 }
 
 /// The v2 (schema) firmware-version floor, as "major.minor.patch".
@@ -1077,7 +1084,7 @@ pub fn accept_license(builder: &mut WasmGenBuilder, license: WasmLicense) -> Res
 /// Add a retrieved file to the builder
 #[wasm_bindgen]
 pub fn gen_add_file(builder: &mut WasmGenBuilder, id: usize, data: Vec<u8>) -> Result<(), String> {
-    let file_data = FileData { id, data };
+    let file_data = FileData::new(id, data);
     builder
         .0
         .add_file(file_data)
