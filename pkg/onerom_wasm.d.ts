@@ -32,6 +32,20 @@ export interface WasmPluginLabel {
 }
 
 /**
+ * A selectable ROM image file format, for building the format picker.
+ *
+ * `value` is the string the config\'s `format` field expects (e.g. `\"binary\"`,
+ * `\"ihex\"`); `label` is the human-readable name; `is_default` marks the format
+ * used when none is specified (raw binary). Enumerated from `onerom-gen`, so a
+ * new format added there appears here - and in the UI - with no further work.
+ */
+export interface FileFormatInfo {
+    value: string;
+    label: string;
+    is_default: boolean;
+}
+
+/**
  * A single ROM or plugin entry in a [`DeviceSummary`].
  */
 export interface RomSummary {
@@ -82,7 +96,7 @@ export interface McuInfo {
 export interface ControlLine {
     name: string;
     pin: number;
-    configurable: boolean;
+    cs_type: string;
 }
 
 /**
@@ -145,6 +159,40 @@ export interface BoardInfo {
     x_jumper_pull: number;
     has_usb: boolean;
     supports_multi_chip_sets: boolean;
+    jumper_header: JumperHeaderInfo | undefined;
+}
+
+/**
+ * One column of the jumper header
+ */
+export interface HeaderColumnInfo {
+    /**
+     * Absolute column position, 1-based from the board\'s left edge
+     */
+    col: number;
+    /**
+     * Top-row pad: role tokens (e.g. `[\"sel_c\",\"swclk\"]`) or `[\"np\"]`/`[\"nc\"]`
+     */
+    row1: string[];
+    /**
+     * Bottom-row pad
+     */
+    row2: string[];
+    /**
+     * Optional third-row pad (X pins), present only where one exists
+     */
+    row3: string[] | undefined;
+}
+
+/**
+ * Physical jumper-header descriptor (mirrors `onerom_config::hw::JumperHeader`)
+ */
+export interface JumperHeaderInfo {
+    /**
+     * Columns present on the header, in ascending `col` order. Absent columns
+     * are omitted, so present columns keep their absolute drawn position.
+     */
+    columns: HeaderColumnInfo[];
 }
 
 /**
@@ -371,6 +419,11 @@ export function chip_types(): string[];
 export function extra_chip_types_for_board(board_name: string): string[];
 
 /**
+ * Return the supported ROM image file formats, in display order.
+ */
+export function file_formats(): FileFormatInfo[];
+
+/**
  * Add a retrieved file to the builder
  */
 export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
@@ -421,6 +474,25 @@ export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
 export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
 
 /**
+ * Flash footprint, in bytes, of one image of `chip_type` on `board`.
+ *
+ * This is the v2 slot size — `2^num_addr_pins * word_bytes` — which is what the
+ * ROM Slot Builder's flash-usage tally needs per slot, and the number
+ * `docs/COMPATIBILITY.md`'s "Image size" column tabulates. It can far exceed the
+ * ROM's own capacity, so it is not the same as `ChipType::size_bytes()`.
+ *
+ * Computed via `onerom_gen::compat::check_chip_set_on_board` for a single-chip
+ * slot, which errors for an unsupported chip/board combination — surfaced here
+ * as a clean JS error.
+ *
+ * `version` is parsed and validated but unused in the maths: the v2 footprint is
+ * determined by board + chip alone. It is kept in the signature for API symmetry
+ * with the other builder bindings and to leave room for future version-dependent
+ * sizing.
+ */
+export function image_size(board: string, chip_type: string, version: string): number;
+
+/**
  * Initialize logging and panic hook
  */
 export function init(): void;
@@ -449,6 +521,16 @@ export function mcus(): string[];
  * Get a list of MCUs for a specific board
  */
 export function mcus_for_mcu_family(family_name: string): ValuePrettyPair[];
+
+/**
+ * The v2 (schema) firmware-version floor, as "major.minor.patch".
+ *
+ * Sourced from `onerom_metadata::MIN_SCHEMA_VERSION` — the same constant
+ * `onerom-fw-parser` branches on to tell v2 firmware from the pre-v0.7.0 layout.
+ * The site uses it to gate the firmware-version picker (and the flash-usage
+ * tally, which is v2-only) to v2 firmware without hardcoding the version.
+ */
+export function min_schema_version(): string;
 
 /**
  * Parse a firmware image into a [`DeviceSummary`].
@@ -531,6 +613,7 @@ export interface InitOutput {
     readonly chip_type_info: (a: number, b: number) => [number, number, number];
     readonly chip_types: () => [number, number];
     readonly extra_chip_types_for_board: (a: number, b: number) => [number, number];
+    readonly file_formats: () => [number, number];
     readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
     readonly gen_build: (a: number, b: any) => [number, number, number];
     readonly gen_build_validation: (a: number, b: any) => [number, number];
@@ -539,12 +622,14 @@ export interface InitOutput {
     readonly gen_description: (a: number) => [number, number];
     readonly gen_file_specs: (a: number) => [number, number];
     readonly gen_licenses: (a: number) => [number, number];
+    readonly image_size: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
     readonly init: () => void;
     readonly mcu_chip_id: (a: number, b: number) => [number, number, number, number];
     readonly mcu_flash_base: (a: number, b: number) => [number, number, number];
     readonly mcu_info: (a: number, b: number) => [number, number, number];
     readonly mcus: () => [number, number];
     readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
+    readonly min_schema_version: () => [number, number];
     readonly parse_firmware: (a: number, b: number, c: any) => any;
     readonly plugin_catalog: (a: any) => any;
     readonly plugincatalog_newest_compatible: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
@@ -563,8 +648,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_450182c5948df29b___convert__closures_____invoke___wasm_bindgen_450182c5948df29b___JsValue__core_9b3796e30d99ddb7___result__Result_____wasm_bindgen_450182c5948df29b___JsError___true_: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen_450182c5948df29b___convert__closures_____invoke___js_sys_dd8926ea80deb88e___Function_fn_wasm_bindgen_450182c5948df29b___JsValue_____wasm_bindgen_450182c5948df29b___sys__Undefined___js_sys_dd8926ea80deb88e___Function_fn_wasm_bindgen_450182c5948df29b___JsValue_____wasm_bindgen_450182c5948df29b___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_48c654dadb7de768___convert__closures_____invoke___wasm_bindgen_48c654dadb7de768___JsValue__core_9b3796e30d99ddb7___result__Result_____wasm_bindgen_48c654dadb7de768___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_48c654dadb7de768___convert__closures_____invoke___js_sys_b7e3dea873b35267___Function_fn_wasm_bindgen_48c654dadb7de768___JsValue_____wasm_bindgen_48c654dadb7de768___sys__Undefined___js_sys_b7e3dea873b35267___Function_fn_wasm_bindgen_48c654dadb7de768___JsValue_____wasm_bindgen_48c654dadb7de768___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
