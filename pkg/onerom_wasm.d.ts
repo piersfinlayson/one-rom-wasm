@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * A plugin\'s resolved display information, as returned to JavaScript.
+ * A plugin's resolved display information, as returned to JavaScript.
  *
  * `label` is always present and displayable: the manifest display name for an
  * official plugin, or the file stem for a local/sideloaded one. `official`
@@ -34,8 +34,8 @@ export interface WasmPluginLabel {
 /**
  * A selectable ROM image file format, for building the format picker.
  *
- * `value` is the string the config\'s `format` field expects (e.g. `\"binary\"`,
- * `\"ihex\"`); `label` is the human-readable name; `is_default` marks the format
+ * `value` is the string the config's `format` field expects (e.g. `"binary"`,
+ * `"ihex"`); `label` is the human-readable name; `is_default` marks the format
  * used when none is specified (raw binary). Enumerated from `onerom-gen`, so a
  * new format added there appears here - and in the UI - with no further work.
  */
@@ -50,7 +50,7 @@ export interface FileFormatInfo {
  */
 export interface RomSummary {
     /**
-     * Display label: \"filename (ROM type)\" where the firmware recorded a
+     * Display label: "filename (ROM type)" where the firmware recorded a
      * filename, else the ROM type on its own.
      *
      * Plugins carry just their filename or URL: their type is always one of
@@ -58,7 +58,7 @@ export interface RomSummary {
      */
     label: string;
     /**
-     * Whether this entry\'s slot is the one currently being served.
+     * Whether this entry's slot is the one currently being served.
      */
     active: boolean;
     /**
@@ -167,11 +167,11 @@ export interface BoardInfo {
  */
 export interface HeaderColumnInfo {
     /**
-     * Absolute column position, 1-based from the board\'s left edge
+     * Absolute column position, 1-based from the board's left edge
      */
     col: number;
     /**
-     * Top-row pad: role tokens (e.g. `[\"sel_c\",\"swclk\"]`) or `[\"np\"]`/`[\"nc\"]`
+     * Top-row pad: role tokens (e.g. `["sel_c","swclk"]`) or `["np"]`/`["nc"]`
      */
     row1: string[];
     /**
@@ -254,19 +254,19 @@ export interface WasmPluginRelease {
  */
 export interface DeviceSummary {
     /**
-     * Firmware version, \"major.minor.patch\".
+     * Firmware version, "major.minor.patch".
      */
     version: string | undefined;
     /**
-     * MCU name (e.g. \"RP2350\", \"F411RE\").
+     * MCU name (e.g. "RP2350", "F411RE").
      */
     mcu: string | undefined;
     /**
-     * Board model (\"fire\" / \"ice\").
+     * Board model ("fire" / "ice").
      */
     model: string | undefined;
     /**
-     * Hardware revision / board name (e.g. \"fire-28-c\").
+     * Hardware revision / board name (e.g. "fire-28-c").
      */
     hw_rev: string | undefined;
     /**
@@ -648,8 +648,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_48c654dadb7de768___convert__closures_____invoke___wasm_bindgen_48c654dadb7de768___JsValue__core_9b3796e30d99ddb7___result__Result_____wasm_bindgen_48c654dadb7de768___JsError___true_: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen_48c654dadb7de768___convert__closures_____invoke___js_sys_b7e3dea873b35267___Function_fn_wasm_bindgen_48c654dadb7de768___JsValue_____wasm_bindgen_48c654dadb7de768___sys__Undefined___js_sys_b7e3dea873b35267___Function_fn_wasm_bindgen_48c654dadb7de768___JsValue_____wasm_bindgen_48c654dadb7de768___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_2a67c6f173b08fad___convert__closures_____invoke___js_sys_bacaababab4a9552___Function_fn_wasm_bindgen_2a67c6f173b08fad___JsValue_____wasm_bindgen_2a67c6f173b08fad___sys__Undefined___js_sys_bacaababab4a9552___Function_fn_wasm_bindgen_2a67c6f173b08fad___JsValue_____wasm_bindgen_2a67c6f173b08fad___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_2a67c6f173b08fad___convert__closures_____invoke___wasm_bindgen_2a67c6f173b08fad___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_2a67c6f173b08fad___JsError___true_: (a: number, b: number, c: any) => [number, number];
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
