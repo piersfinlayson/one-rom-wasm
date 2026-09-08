@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.1 - 2026-09-08
+
+Move up to the published onerom crates: onerom-app 0.3.0, onerom-config 0.7.0,
+onerom-gen 0.8.0, onerom-metadata 0.2.0 and onerom-fw-parser 0.9.0.
+
+Motorola S-records join binary and Intel HEX in the ROM image formats the web
+programmer offers, with the same `load_address` handling. `file_formats()`
+reports `srec` alongside the others, so a site building its File Format picker
+from the crate picks it up with no change.
+
 ## v0.5.0 - 2026-08-09
 
 Move up to the published onerom crates: onerom-app 0.2.0, onerom-config 0.6.0,
