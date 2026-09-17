@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.2 - 2026-09-17
+
+Move up to the published onerom crates: onerom-config 0.7.1 and onerom-gen 0.8.1.
+
+Two chip types for the Amiga A500 rev 5 Kickstart socket, `27C400Pin31A17` and
+`27C200Pin31NC`, and `HN613128P` as an alias for `23128`. A site building its
+chip type list from the crate picks them up with no change.
+
 ## v0.5.1 - 2026-09-08
 
 Move up to the published onerom crates: onerom-app 0.3.0, onerom-config 0.7.0,
