@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One ROM &mdash; board header pin viewer</title>
+<style>
+  :root {
+    --bg-color: #14141a; --panel: #1a1a22; --input-bg-color: #1e1e26;
+    --text-color: #e2e8f0; --text-secondary: #9a9aa8;
+    --border-color: #4a4a52; --gold: #ffb700;
+    --red: #d8623f; --gnd: #7a7a86; --swd: #4bb3c4; --ctrl: #c98a3c;
+    --x: #9a7bd0; --addr: #5fae6f; --wire: #7a7a86;
+    --font: system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 2rem; background: var(--bg-color); color: var(--text-color);
+         font-family: var(--font); line-height: 1.5; }
+  h1 { font-size: 1.15rem; margin: 0 0 0.25rem; }
+  .sub { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem; max-width: 60rem; }
+  .sub code { font-family: var(--mono); background: var(--input-bg-color); padding: 0 4px; border-radius: 3px; }
+  .controls { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+  label { color: var(--text-secondary); font-size: 0.9rem; }
+  select { background: var(--input-bg-color); border: 1px solid var(--border-color); border-radius: 6px;
+           height: 34px; padding: 0 0.6rem; font-size: 0.9rem; color: var(--text-color); font-family: var(--font); }
+  select:focus { outline: none; border-color: var(--gold); }
+  .meta { font-size: 0.82rem; color: var(--text-secondary); }
+  .meta b { color: var(--text-color); }
+
+  .panel { padding: 1.2rem 1.3rem; border: 1px solid var(--border-color); border-radius: 10px;
+           background: var(--panel); overflow-x: auto; }
+  /* the header, drawn in physical orientation: pin 1 top-left */
+  .hdr { display: inline-flex; gap: 8px; }
+  .hcol { display: flex; flex-direction: column; gap: 6px; }
+  .colnum { text-align: center; font-family: var(--mono); font-size: 0.62rem; color: var(--text-secondary); }
+  .pad { position: relative; width: 80px; height: 80px; border: 1.5px solid var(--border-color);
+         border-radius: 7px; display: flex; align-items: center; justify-content: center;
+         background: rgba(255,255,255,0.015); }
+  .pad .pnum { position: absolute; top: 3px; left: 5px; font-family: var(--mono); font-size: 0.58rem;
+               color: var(--text-secondary); opacity: 0.75; }
+  .pad .rl { font-family: var(--mono); font-size: 0.8rem; text-align: center; line-height: 1.25; padding: 0 3px; }
+  .pad .rl small { display: block; font-size: 0.58rem; color: var(--text-secondary); font-weight: 400; }
+  .pad .sep { opacity: 0.4; margin: 0 1px; }
+  /* role colours */
+  .pad.power { border-color: var(--red); }        .pad.power .rl { color: var(--red); }
+  .pad.gnd   { border-color: var(--gnd); }         .pad.gnd .rl { color: var(--gnd); }
+  .pad.select{ border-color: var(--gold); }        .pad.select .rl { color: var(--gold); }
+  .pad.swd   { border-color: var(--swd); }         .pad.swd .rl { color: var(--swd); }
+  .pad.ctrl  { border-color: var(--ctrl); }        .pad.ctrl .rl { color: var(--ctrl); }
+  .pad.x     { border-color: var(--x); }           .pad.x .rl { color: var(--x); }
+  .pad.addr  { border-color: var(--addr); }        .pad.addr .rl { color: var(--addr); }
+  .pad.nc    { border-style: dashed; }             .pad.nc .rl { color: var(--text-secondary); }
+  .pad.np    { border-style: dashed; opacity: 0.5; background:
+                 repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.04) 4px, rgba(255,255,255,0.04) 8px); }
+  .pad.np .rl { color: var(--text-secondary); }
+  .pad.gap   { border-color: transparent; background: none; }
+  .pad.spacer{ border: none; background: none; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-top: 1rem; font-size: 0.72rem; color: var(--text-secondary); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border: 1.5px solid; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .legend .l-power::before { border-color: var(--red); }
+  .legend .l-gnd::before { border-color: var(--gnd); }
+  .legend .l-select::before { border-color: var(--gold); }
+  .legend .l-swd::before { border-color: var(--swd); }
+  .legend .l-ctrl::before { border-color: var(--ctrl); }
+  .legend .l-x::before { border-color: var(--x); }
+  .legend .l-addr::before { border-color: var(--addr); }
+  .legend .l-nc::before { border-color: var(--text-secondary); border-style: dashed; }
+
+  .fallback { color: var(--text-secondary); font-style: italic; }
+  pre.raw { margin-top: 1.2rem; padding: 0.8rem 1rem; background: var(--input-bg-color); border: 1px solid var(--border-color);
+            border-radius: 8px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-secondary);
+            overflow-x: auto; white-space: pre; }
+  .tag { display: inline-block; font-size: 0.68rem; font-family: var(--mono); padding: 1px 6px; border-radius: 10px; border: 1px solid var(--border-color); }
+  .tag.have { color: var(--gold); border-color: var(--gold); }
+  .tag.fallback { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <h1>One ROM board header pin viewer</h1>
+  <div class="sub">A generic view of a board's physical jumper / programming header from the live
+    <code>board_info(board).jumper_header</code> metadata. Each pad is drawn in its physical
+    position (pin&nbsp;1 top-left, odd pins top row, even pins bottom row; X pads on the lower
+    row where present), labelled with its role(s). Boards not yet characterised show nothing.</div>
+
+  <div class="controls">
+    <label for="board">Board:</label>
+    <select id="board"></select>
+    <span class="meta" id="meta"></span>
+  </div>
+
+  <div class="panel" id="panel"></div>
+  <div class="legend">
+    <span class="l-power">5V</span>
+    <span class="l-gnd">GND</span>
+    <span class="l-select">image select (A = LSB)</span>
+    <span class="l-swd">SWD (SWCLK/SWDIO)</span>
+    <span class="l-ctrl">RUN / BOOTSEL</span>
+    <span class="l-x">X pin</span>
+    <span class="l-addr">address line</span>
+    <span class="l-nc">n/c &middot; n/p</span>
+  </div>
+  <pre class="raw" id="raw"></pre>
+
+<script type="module">
+  import init, { boards, board_info } from './pkg/onerom_wasm.js';
+
+  const sortedCols = h => h.columns.slice().sort((a, b) => a.col - b.col);
+
+  // Which colour class a pad takes, by highest-precedence role it carries.
+  const PREC = ["select", "power", "swd", "ctrl", "x", "addr", "gnd"];
+  function roleClass(tok) {
+    if (tok.indexOf("sel_") === 0) return "select";
+    if (tok === "5v") return "power";
+    if (tok === "gnd") return "gnd";
+    if (tok === "swclk" || tok === "swdio") return "swd";
+    if (tok === "run" || tok === "bootsel") return "ctrl";
+    if (tok === "x1" || tok === "x2") return "x";
+    if (/^a\d+$/.test(tok)) return "addr";
+    return "";
+  }
+  function padClass(tokens) {
+    let best = "";
+    for (const t of tokens) {
+      const c = roleClass(t);
+      if (c && (best === "" || PREC.indexOf(c) < PREC.indexOf(best))) best = c;
+    }
+    return best || "ctrl";
+  }
+
+  // Human label for a role token, with GPIO where board_info exposes it.
+  function roleLabel(tok, ctx) {
+    if (tok.indexOf("sel_") === 0) {
+      const bit = tok.charCodeAt(4) - 97;
+      const gpio = ctx.selPins[bit];
+      return `${String.fromCharCode(65 + bit)}<small>bit ${bit}${gpio != null ? ` &middot; gpio ${gpio}` : ""}</small>`;
+    }
+    if (/^a\d+$/.test(tok)) {
+      const n = +tok.slice(1);
+      const gpio = ctx.addrPins ? ctx.addrPins[n] : undefined;
+      return `A${n}<small>addr${gpio != null ? ` &middot; gpio ${gpio}` : ""}</small>`;
+    }
+    switch (tok) {
+      case "5v": return "5V";
+      case "gnd": return "GND";
+      case "run": return "RUN";
+      case "bootsel": return "BOOTSEL";
+      case "swclk": return "SWCLK";
+      case "swdio": return "SWDIO";
+      case "x1": return ctx.px1 != null ? `X1<small>gpio ${ctx.px1}</small>` : "X1";
+      case "x2": return ctx.px2 != null ? `X2<small>gpio ${ctx.px2}</small>` : "X2";
+      default: return tok;
+    }
+  }
+
+  function padHtml(tokens, pinNum, ctx, isRow3) {
+    const pn = pinNum != null ? `<span class="pnum">${pinNum}</span>` : "";
+    if (!tokens) return isRow3 ? `<div class="pad spacer"></div>` : `<div class="pad gap"></div>`;
+    if (tokens.length === 1 && tokens[0] === "np") return `<div class="pad np">${pn}<span class="rl">n/p</span></div>`;
+    if (tokens.length === 1 && tokens[0] === "nc") return `<div class="pad nc">${pn}<span class="rl">n/c</span></div>`;
+    const labels = tokens.map(t => roleLabel(t, ctx)).join('<span class="sep">/</span>');
+    return `<div class="pad ${padClass(tokens)}">${pn}<span class="rl">${labels}</span></div>`;
+  }
+
+  function render(info) {
+    const panel = document.getElementById("panel");
+    const h = info.jumper_header || null;
+    if (!h) {
+      panel.innerHTML = `<div class="fallback">This board has no jumper_header descriptor yet &mdash; nothing to draw.</div>`;
+      document.getElementById("raw").textContent = "jumper_header: null (board not yet characterised)";
+      return;
+    }
+    const ctx = { selPins: info.sel_pins, addrPins: info.addr_pins, px1: info.pin_x1 ?? null, px2: info.pin_x2 ?? null };
+    const cols = sortedCols(h);
+    const maxCol = cols.length ? cols[cols.length - 1].col : 0;
+    const byCol = {}; cols.forEach(c => byCol[c.col] = c);
+    const anyRow3 = cols.some(c => c.row3);
+
+    let hdr = "";
+    for (let col = 1; col <= maxCol; col++) {
+      const c = byCol[col];
+      hdr += `<div class="hcol"><div class="colnum">${col}</div>`;
+      hdr += padHtml(c ? c.row1 : null, 2 * col - 1, ctx, false);
+      hdr += padHtml(c ? c.row2 : null, 2 * col, ctx, false);
+      if (anyRow3) hdr += padHtml(c && c.row3 ? c.row3 : null, null, ctx, true);
+      hdr += `</div>`;
+    }
+    panel.innerHTML = `<div class="hdr">${hdr}</div>`;
+    document.getElementById("raw").textContent = JSON.stringify(h, null, 2);
+  }
+
+  function show(name) {
+    const info = board_info(name);
+    const h = info.jumper_header || null;
+    document.getElementById("meta").innerHTML =
+      `<b>${info.description}</b> &middot; ${info.sel_pins.length} image-select pin(s) ` +
+      (h ? `<span class="tag have">header</span>` : `<span class="tag fallback">no header</span>`);
+    render(info);
+  }
+
+  async function main() {
+    await init();
+    const sel = document.getElementById("board");
+    const names = boards();
+    names.sort((a, b) => {
+      const ah = !!board_info(a).jumper_header, bh = !!board_info(b).jumper_header;
+      return (ah === bh) ? a.localeCompare(b) : (ah ? -1 : 1);
+    });
+    for (const n of names) {
+      const o = document.createElement("option");
+      o.value = n; o.textContent = n + (board_info(n).jumper_header ? "  ★" : "");
+      sel.appendChild(o);
+    }
+    sel.addEventListener("change", e => show(e.target.value));
+    show(names[0]);
+  }
+  main();
+</script>
+</body>
+</html>
