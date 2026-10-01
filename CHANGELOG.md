@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.3 - 2026-10-01
+
+Add `byte_order` to find whether a 16-bit ROM image is stored high byte first
+and so requires the `swap_bytes` transform. It uses the same check as the CLI.
+
 ## v0.5.2 - 2026-09-17
 
 Move up to the published onerom crates: onerom-config 0.7.1 and onerom-gen 0.8.1.

@@ -571,6 +571,31 @@ pub fn file_formats() -> Vec<FileFormatInfo> {
         .collect()
 }
 
+/// The byte order of a 16-bit ROM image found from its first bytes.
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct ByteOrderInfo {
+    /// Whether the image requires the `swap_bytes` transform for One ROM to
+    /// serve it correctly. True where it is stored high byte first.
+    pub needs_swap_bytes: bool,
+    /// What identified the order such as "an Amiga ROM header".
+    pub evidence: String,
+}
+
+/// Find the byte order of a 16-bit ROM image from its first bytes.
+///
+/// `data` is a raw binary image. An Intel HEX or S-record file matches
+/// nothing. `undefined` where nothing is recognised or the checks disagree.
+#[wasm_bindgen]
+pub fn byte_order(data: Vec<u8>) -> Option<ByteOrderInfo> {
+    let conclusion = onerom_app::identity::identify(&data).byte_order;
+    let order = conclusion.agreed()?;
+    Some(ByteOrderInfo {
+        needs_swap_bytes: *order != onerom_app::identity::ByteOrder::ONE_ROM,
+        evidence: conclusion.claims().first()?.evidence.to_string(),
+    })
+}
+
 /// Return detailed information about a specific ROM type
 #[wasm_bindgen]
 pub fn chip_type_info(name: String) -> Result<ChipTypeInfo, JsValue> {
