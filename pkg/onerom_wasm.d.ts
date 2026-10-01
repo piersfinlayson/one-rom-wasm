@@ -232,6 +232,21 @@ export interface WasmFileSpec {
 }
 
 /**
+ * The byte order of a 16-bit ROM image found from its first bytes.
+ */
+export interface ByteOrderInfo {
+    /**
+     * Whether the image requires the `swap_bytes` transform for One ROM to
+     * serve it correctly. True where it is stored high byte first.
+     */
+    needs_swap_bytes: boolean;
+    /**
+     * What identified the order such as "an Amiga ROM header".
+     */
+    evidence: string;
+}
+
+/**
  * The compatible release chosen for a plugin, as returned to JavaScript.
  *
  * Carries everything the web build path needs: the version to display, the
@@ -400,6 +415,14 @@ export function boards(): string[];
  * Get a list of boards for a specific MCU family
  */
 export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
+
+/**
+ * Find the byte order of a 16-bit ROM image from its first bytes.
+ *
+ * `data` is a raw binary image. An Intel HEX or S-record file matches
+ * nothing. `undefined` where nothing is recognised or the checks disagree.
+ */
+export function byte_order(data: Uint8Array): ByteOrderInfo | undefined;
 
 /**
  * Return a list of all aliases for all chip types
@@ -609,6 +632,7 @@ export interface InitOutput {
     readonly board_info: (a: number, b: number) => [number, number, number];
     readonly boards: () => [number, number, number, number];
     readonly boards_for_mcu_family: (a: number, b: number) => [number, number, number, number];
+    readonly byte_order: (a: number, b: number) => any;
     readonly chip_type_aliases: () => [number, number];
     readonly chip_type_info: (a: number, b: number) => [number, number, number];
     readonly chip_types: () => [number, number];
@@ -648,8 +672,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_a74a6f0432620f47___convert__closures_____invoke___js_sys_7b919427174303f2___Function_fn_wasm_bindgen_a74a6f0432620f47___JsValue_____wasm_bindgen_a74a6f0432620f47___sys__Undefined___js_sys_7b919427174303f2___Function_fn_wasm_bindgen_a74a6f0432620f47___JsValue_____wasm_bindgen_a74a6f0432620f47___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen_a74a6f0432620f47___convert__closures_____invoke___wasm_bindgen_a74a6f0432620f47___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_a74a6f0432620f47___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___wasm_bindgen_63a46d96b29ae508___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_63a46d96b29ae508___JsError___true_: (a: number, b: number, c: any) => [number, number];
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
