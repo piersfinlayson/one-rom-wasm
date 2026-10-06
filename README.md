@@ -22,20 +22,22 @@ npm install @types/node
 
 2. Update the version in Cargo.toml to the new version if not already done.
 
-3. Run `./build.sh && ./test.sh` to ensure everything builds correctly.
+3. Date the version's heading in CHANGELOG.md.
 
-4. Point browser at https://localhost:8000/ (or wherever you are hosting the wasm package) and ensure everything works correctly.
+4. Run `./build.sh && ./test.sh` to ensure everything builds correctly.
 
-5. Commit any changes to Cargo.toml or other files.
+5. Point browser at https://localhost:8000/ (or wherever you are hosting the wasm package) and ensure everything works correctly.
 
-6. Run `cargo publish --dry-run` to ensure everything is ready for publishing.
+6. Commit any changes to Cargo.toml or other files.
 
-7. Run `cargo publish` to publish the crate to crates.io.
+7. Run `cargo publish --dry-run` to ensure everything is ready for publishing.
 
-8. Tag the release in git with `git tag vX.Y.Z` where X.Y.Z is the version number.
+8. Run `cargo publish` to publish the crate to crates.io.
 
-9. Push the changes and tags to the remote repository with `git push && git push --tags`.
+9. Tag the release in git with `git tag vX.Y.Z` where X.Y.Z is the version number.
 
-10. Update the version in Cargo.toml to the next development version (e.g., X.Y.Z+1).
+10. Push the changes and tags to the remote repository with `git push && git push --tags`.
+
+11. Update the version in Cargo.toml to the next development version (e.g., X.Y.Z+1).
 
 The GitHub workflow automatically builds and publishes the updated site on a commit to the main branch, and also stores off the new release at releases/vX.Y.Z/ when a new 'v*' tag is pushed.1

@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.6.0 - 2026-10-06
+
+Move up to the onerom crates for firmware v0.8.0: onerom-app 0.4.0,
+onerom-config 0.7.2, onerom-gen 0.9.0, onerom-metadata 0.3.0, onerom-fw-parser
+0.10.0 and onerom-lab-parser 0.1.0.
+
+Support commissioning information and L sized boards. With an OTP read
+callback `parse_firmware` fills in `DeviceSummary`'s `board_size`,
+`recorded_board_size` and `commissioned_board`. Add `parse_image_file`,
+`flash_plan`, `flash_layout`, `supports_board_size` and `BoardInfo.board_sizes`.
+
+`parse_firmware` parses One ROM Lab firmware. `DeviceSummary.firmware` is
+`onerom` or `lab`.
+
+Support reserved pins. Add `image_select_pins`, `supports_reserved_pins`,
+`gen_slots_using_reserved_pins` and `DeviceSummary.reserved_pins`.
+
+Errors from onerom-gen are returned as onerom-gen's own messages without a
+prefix.
+
 ## v0.5.3 - 2026-10-01
 
 Add `byte_order` to find whether a 16-bit ROM image is stored high byte first

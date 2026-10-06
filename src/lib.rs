@@ -7,12 +7,17 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use airfrog_rpc::io::Reader;
+use onerom_app::{FlashPlan, FlashPlanError, FlashStep, OtpError};
 use onerom_config::fw::{FirmwareProperties, FirmwareVersion};
-use onerom_config::mcu::Family;
+use onerom_config::hw::{Board, BoardSize};
+use onerom_config::mcu::{Family, RP235X_BASE_FLASH, Variant};
+use onerom_config::pin::parse_pin;
 use onerom_fw_parser::{
-    ParsedDevice, Parser, SlotKind, readers::MemoryReader, readers::RegionKind,
+    ImageFileError, ParsedDevice, Parser, SlotKind, readers::MemoryReader, readers::RegionKind,
 };
-use onerom_gen::{Builder as GenBuilder, FileData};
+use onerom_gen::{Builder as GenBuilder, FileData, FlashChips, slot_addresses};
+use onerom_lab_parser::LabParser;
+use onerom_metadata::{MaybeKnown, OneromBoardSize};
 
 /// Initialize logging and panic hook
 #[wasm_bindgen(start)]
@@ -85,6 +90,8 @@ pub fn versions() -> VersionInfo {
 #[derive(Serialize, Tsify)]
 #[tsify(into_wasm_abi)]
 pub struct DeviceSummary {
+    /// The firmware found, or `None` where it isn't recognised.
+    pub firmware: Option<Firmware>,
     /// Firmware version, "major.minor.patch".
     pub version: Option<String>,
     /// MCU name (e.g. "RP2350", "F411RE").
@@ -103,6 +110,25 @@ pub struct DeviceSummary {
     /// Whether runtime info was present (device was running when read).
     /// Requires RAM to have been supplied; always false for a flash-only parse.
     pub running: bool,
+    /// The board's size, "M" or "L". A board recording another size, or none,
+    /// is "M". `None` for One ROM Lab, for an image file and where
+    /// `parse_firmware` is called without `otp_cb`.
+    pub board_size: Option<String>,
+    /// The board size the device records: "M", "L", "other" or "unknown".
+    /// "unknown" covers firmware that doesn't record a size, a size this build
+    /// doesn't know and a size that couldn't be read. `None` where
+    /// `board_size` is.
+    pub recorded_board_size: Option<String>,
+    /// The board type the board's current commissioning instance records, such
+    /// as "fire-40-a". Text that isn't a known board type has its control
+    /// characters escaped. `None` where OTP doesn't have a current instance or
+    /// couldn't be read, for One ROM Lab, for an image file and where
+    /// `parse_firmware` is called without `otp_cb`.
+    pub commissioned_board: Option<String>,
+    /// The reserved pins' silkscreen labels, for example `["SEL_C", "X1"]`.
+    /// `None` where the metadata predates reserved pins or wasn't read, and
+    /// for One ROM Lab.
+    pub reserved_pins: Option<Vec<String>>,
     /// Plugin entries (system, user), in slot order.
     pub plugins: Vec<RomSummary>,
     /// User ROM entries, in slot order.
@@ -111,8 +137,18 @@ pub struct DeviceSummary {
     /// size to re-read, in bytes. `None` otherwise.
     pub full_reread_size: Option<u32>,
     /// Full parse serialised as JSON, for the details view. Externally tagged
-    /// by format (`Original` / `Schema`).
+    /// by format (`Original` / `Schema`), or `"Lab"` for One ROM Lab.
     pub dump: String,
+}
+
+/// The member of the One ROM family a [`DeviceSummary`] describes.
+#[derive(Serialize, Tsify)]
+#[serde(rename_all = "lowercase")]
+pub enum Firmware {
+    /// One ROM, from either firmware generation.
+    OneRom,
+    /// One ROM Lab.
+    Lab,
 }
 
 /// A single ROM or plugin entry in a [`DeviceSummary`].
@@ -245,7 +281,7 @@ impl Reader for CallbackReader {
 ///
 /// Accepts a complete `.bin`, the first 64KB of a flash dump, or an entire
 /// flash dump. Handles both pre-v0.7.0 (original) and v0.7.0+ (schema) firmware
-/// via `Parser::parse_device`.
+/// via `Parser::parse_device`, and One ROM Lab via `LabParser`.
 ///
 /// The plugin/ROM list comes from flash. Whenever the parser follows a runtime
 /// pointer (into RAM), `read_cb` is invoked to fetch those bytes on demand —
@@ -255,10 +291,16 @@ impl Reader for CallbackReader {
 ///
 /// `read_cb` is a JS `async (addr: number, len: number) => Uint8Array` returning
 /// exactly `len` bytes at `addr` (see [`CallbackReader`]).
+///
+/// `otp_cb` reads the board's OTP (see [`JsOtp`]). With it the summary has the
+/// board's size, from runtime info where One ROM records it and from OTP
+/// otherwise, as the CLI reads it. It also has the board type the board is
+/// commissioned as. `undefined` leaves both out.
 #[wasm_bindgen]
 pub async fn parse_firmware(
     flash: Vec<u8>,
     read_cb: js_sys::Function,
+    otp_cb: Option<js_sys::Function>,
 ) -> Result<DeviceSummary, JsValue> {
     // 0x08000000 is a placeholder flash base; parse_device detects RP2350
     // firmware and re-bases via Reader::update_base_address. Non-flash reads are
@@ -267,7 +309,272 @@ pub async fn parse_firmware(
     let mut parser = Parser::new(&mut reader);
     let parsed = parser.parse_device().await;
 
-    device_summary(&parsed).map_err(|e| JsValue::from_str(&e))
+    if matches!(parsed, ParsedDevice::Lab) {
+        return lab_summary(&mut reader, &parsed)
+            .await
+            .map_err(|e| JsValue::from_str(&e));
+    }
+    let mut summary = device_summary(&parsed).map_err(|e| JsValue::from_str(&e))?;
+
+    // A blank board, or one with firmware this build doesn't recognise, still
+    // has a size in OTP.
+    if let Some(callback) = otp_cb {
+        let mut otp = JsOtp { callback };
+        let size_otp = &mut otp;
+        let size = onerom_app::device_board_size(parsed.runtime_board_size(), || async move {
+            onerom_app::read_board_size(size_otp)
+                .await
+                .inspect_err(|e| log::debug!("Couldn't read the board size: {e}"))
+                .ok()
+        })
+        .await;
+        summary.board_size = Some(
+            onerom_app::known_board_size(size)
+                .unwrap_or(BoardSize::M)
+                .name()
+                .to_string(),
+        );
+        summary.recorded_board_size = Some(recorded_board_size(size).to_string());
+        summary.commissioned_board = commissioned_board(&mut otp).await;
+    }
+    Ok(summary)
+}
+
+/// The board type `otp`'s current commissioning instance records, as
+/// [`DeviceSummary::commissioned_board`] shows it. `None` where there isn't a
+/// current instance or the read fails.
+async fn commissioned_board(otp: &mut JsOtp) -> Option<String> {
+    let area = onerom_app::read_commissioning(otp)
+        .await
+        .inspect_err(|e| log::debug!("Couldn't read the commissioning area: {e}"))
+        .ok()?;
+    let board = area.current()?.board()?;
+    Some(match Board::try_from_str(board) {
+        Some(known) => known.name().to_string(),
+        None => escape_controls(board),
+    })
+}
+
+/// `text` with each control character escaped, as the CLI shows OTP strings. A
+/// board's OTP can contain any bytes.
+fn escape_controls(text: &str) -> String {
+    text.chars()
+        .map(|c| {
+            if c.is_control() {
+                c.escape_default().to_string()
+            } else {
+                c.to_string()
+            }
+        })
+        .collect()
+}
+
+/// The board size a device records, as [`DeviceSummary::recorded_board_size`]
+/// shows it.
+fn recorded_board_size(size: Option<MaybeKnown<OneromBoardSize>>) -> &'static str {
+    match size {
+        Some(MaybeKnown::Known(OneromBoardSize::BoardSizeM)) => "M",
+        Some(MaybeKnown::Known(OneromBoardSize::BoardSizeL)) => "L",
+        Some(MaybeKnown::Known(OneromBoardSize::BoardSizeOther)) => "other",
+        Some(MaybeKnown::Known(OneromBoardSize::BoardSizeUnknown) | MaybeKnown::Unknown(_))
+        | None => "unknown",
+    }
+}
+
+/// A JavaScript-backed [`onerom_app::LocalOtpAccess`]. It reads OTP and
+/// refuses writes.
+///
+/// Wraps a JS async callback `(row: number, count: number, ecc: boolean) =>
+/// Promise<Uint8Array>` returning the rows as picoboot.js's OTP_READ returns
+/// them. Each row is little-endian, 2 bytes with ECC and 4 bytes raw.
+struct JsOtp {
+    callback: js_sys::Function,
+}
+
+impl JsOtp {
+    /// Reads `count` rows from `row`, with ECC where `ecc`, as the callback
+    /// returns them.
+    async fn read(&self, row: u16, count: u16, ecc: bool) -> Result<Vec<u8>, OtpError> {
+        let promise = self
+            .callback
+            .call3(
+                &JsValue::NULL,
+                &JsValue::from_f64(f64::from(row)),
+                &JsValue::from_f64(f64::from(count)),
+                &JsValue::from_bool(ecc),
+            )
+            .map_err(|e| OtpError::Transport(format!("OTP read callback threw: {e:?}")))?;
+
+        let resolved = wasm_bindgen_futures::JsFuture::from(js_sys::Promise::from(promise))
+            .await
+            .map_err(|e| {
+                OtpError::Transport(format!("OTP read failed at row {row:#05x}: {e:?}"))
+            })?;
+
+        Ok(js_sys::Uint8Array::new(&resolved).to_vec())
+    }
+}
+
+impl onerom_app::LocalOtpAccess for JsOtp {
+    async fn read_ecc(&mut self, row: u16, count: u16) -> Result<Vec<u16>, OtpError> {
+        let bytes = self.read(row, count, true).await?;
+        otp_rows::<2>(&bytes, count).map(|rows| rows.into_iter().map(u16::from_le_bytes).collect())
+    }
+
+    async fn read_raw(&mut self, row: u16, count: u16) -> Result<Vec<u32>, OtpError> {
+        let bytes = self.read(row, count, false).await?;
+        // A row holds 24 bits.
+        otp_rows::<4>(&bytes, count).map(|rows| {
+            rows.into_iter()
+                .map(|row| u32::from_le_bytes(row) & 0xff_ffff)
+                .collect()
+        })
+    }
+
+    async fn write_ecc(&mut self, _row: u16, _value: u16) -> Result<(), OtpError> {
+        Err(OtpError::Transport(OTP_WRITE_UNSUPPORTED.to_string()))
+    }
+
+    async fn write_raw(&mut self, _row: u16, _value: u32) -> Result<(), OtpError> {
+        Err(OtpError::Transport(OTP_WRITE_UNSUPPORTED.to_string()))
+    }
+}
+
+/// The error for an OTP write.
+const OTP_WRITE_UNSUPPORTED: &str = "OTP writes aren't supported";
+
+/// `bytes` split into `count` rows of `N` bytes. Refuses a read of another
+/// length.
+fn otp_rows<const N: usize>(bytes: &[u8], count: u16) -> Result<Vec<[u8; N]>, OtpError> {
+    let (rows, rest) = bytes.as_chunks::<N>();
+    if rows.len() == usize::from(count) && rest.is_empty() {
+        Ok(rows.to_vec())
+    } else {
+        Err(OtpError::Transport(format!(
+            "a read of {count} rows returned {} bytes",
+            bytes.len()
+        )))
+    }
+}
+
+/// Parse an image file into a [`DeviceSummary`].
+///
+/// A file longer than the first flash chip holds the second chip's contents
+/// after the first chip's. A file whose slots don't match its length or the
+/// flash chips is `corrupt`, and the last of its `parse_errors` says why.
+/// Otherwise the summary is the one [`parse_firmware`] returns for flash alone.
+#[wasm_bindgen]
+pub async fn parse_image_file(data: Vec<u8>) -> Result<DeviceSummary, JsValue> {
+    image_file_summary(&data)
+        .await
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+/// [`parse_image_file`] returning its error as a string.
+async fn image_file_summary(data: &[u8]) -> Result<DeviceSummary, String> {
+    // Only an RP2350 board has a second chip, so the file splits at the end of
+    // the RP2350's first chip.
+    let parsed =
+        onerom_fw_parser::parse_image_file(data, FlashChips::first_for(Variant::RP2350)).await;
+    if matches!(parsed, ParsedDevice::Lab) {
+        let mut reader = MemoryReader::new(data.to_vec(), RP235X_BASE_FLASH);
+        return lab_summary(&mut reader, &parsed).await;
+    }
+
+    let mut summary = device_summary(&parsed)?;
+    // Schema-format firmware is RP2350-only.
+    let mcu = parsed
+        .as_original()
+        .and_then(|sdrr| sdrr.flash.as_ref())
+        .and_then(|flash| flash.mcu_variant)
+        .unwrap_or(Variant::RP2350);
+    if let Err(e) = parsed.check_image_file(data.len(), FlashChips::first_for(mcu)) {
+        summary.corrupt = true;
+        summary.parse_errors.push(image_file_error(&e));
+    }
+    Ok(summary)
+}
+
+/// Why an image file fails [`ParsedDevice::check_image_file`], as
+/// [`DeviceSummary::parse_errors`] shows it.
+fn image_file_error(error: &ImageFileError) -> String {
+    match error {
+        ImageFileError::TooShort { short_by } => format!("{short_by} bytes short"),
+        ImageFileError::TooLong { too_long_by } => format!("{too_long_by} bytes too long"),
+        ImageFileError::BadAddress { .. } => "a slot has an invalid address".to_string(),
+    }
+}
+
+/// Build a [`DeviceSummary`] for a One ROM Lab, read with `LabParser` as the
+/// CLI reads it. `dev` is the `ParsedDevice::Lab` that found it.
+async fn lab_summary<R: Reader>(
+    reader: &mut R,
+    dev: &ParsedDevice,
+) -> Result<DeviceSummary, String> {
+    let dump = serde_json::to_string(dev).map_err(|e| e.to_string())?;
+    let lab = match LabParser::new(reader).parse().await {
+        Ok(lab) => lab,
+        Err(e) => {
+            return Ok(DeviceSummary {
+                firmware: Some(Firmware::Lab),
+                version: None,
+                mcu: None,
+                model: None,
+                hw_rev: None,
+                corrupt: true,
+                parse_errors: vec![e],
+                can_run: true,
+                running: false,
+                board_size: None,
+                recorded_board_size: None,
+                commissioned_board: None,
+                reserved_pins: None,
+                plugins: Vec::new(),
+                roms: Vec::new(),
+                full_reread_size: None,
+                dump,
+            });
+        }
+    };
+
+    // The board Lab runs as, or the one its image was built for when it isn't
+    // running.
+    let hw_rev = match &lab.runtime {
+        Ok(runtime) => runtime.hw_rev.clone(),
+        Err(_) => lab.metadata.as_ref().ok().and_then(|m| m.hw.hw_rev.clone()),
+    };
+    let board = hw_rev.as_deref().and_then(Board::try_from_str);
+    let info = &lab.info;
+
+    Ok(DeviceSummary {
+        firmware: Some(Firmware::Lab),
+        version: Some(format!(
+            "{}.{}.{}",
+            info.major_version, info.minor_version, info.patch_version
+        )),
+        mcu: board.as_ref().map(|b| b.mcu_family().to_string()),
+        model: board.as_ref().map(|b| b.model().to_string()),
+        hw_rev: board.as_ref().map(|b| b.name().to_string()),
+        corrupt: lab.metadata.is_err(),
+        parse_errors: lab
+            .metadata
+            .as_ref()
+            .err()
+            .map(|e| format!("{e:?}"))
+            .into_iter()
+            .collect(),
+        // Lab always runs its own USB stack.
+        can_run: true,
+        running: lab.runtime.is_ok(),
+        board_size: None,
+        recorded_board_size: None,
+        commissioned_board: None,
+        reserved_pins: None,
+        plugins: Vec::new(),
+        roms: Vec::new(),
+        full_reread_size: None,
+        dump,
+    })
 }
 
 /// Build a [`DeviceSummary`] from a parsed device.
@@ -309,6 +616,7 @@ fn device_summary(dev: &ParsedDevice) -> Result<DeviceSummary, String> {
     let dump = serde_json::to_string(dev).map_err(|e| e.to_string())?;
 
     Ok(DeviceSummary {
+        firmware: dev.is_recognised().then_some(Firmware::OneRom),
         version: version_string(dev),
         mcu: dev.mcu_name(),
         model: board.as_ref().map(|b| b.model().to_string()),
@@ -317,6 +625,15 @@ fn device_summary(dev: &ParsedDevice) -> Result<DeviceSummary, String> {
         parse_errors,
         can_run: dev.is_usb_run_capable(),
         running: dev.is_running(),
+        board_size: None,
+        recorded_board_size: None,
+        commissioned_board: None,
+        reserved_pins: dev.reserved_pins().map(|reserved| {
+            reserved
+                .pins()
+                .map(|pin| pin.silkscreen().to_string())
+                .collect()
+        }),
         plugins,
         roms,
         full_reread_size: full_reread_size(dev),
@@ -337,6 +654,8 @@ fn version_string(dev: &ParsedDevice) -> Option<String> {
             let i = o.info()?;
             (i.major_version, i.minor_version, i.patch_version)
         }
+        // parse_firmware reads a Lab with LabParser instead.
+        _ => return None,
     };
     Some(format!("{maj}.{min}.{pat}"))
 }
@@ -731,6 +1050,62 @@ pub fn min_schema_version() -> String {
     format!("{}.{}.{}", v.major(), v.minor(), v.patch())
 }
 
+/// Whether firmware `version` supports a `board_size` board ("M" or "L").
+/// Firmware before 0.8.0 supports only M.
+#[wasm_bindgen]
+pub fn supports_board_size(version: String, board_size: String) -> Result<bool, JsValue> {
+    let version = FirmwareVersion::try_from_str(&version)
+        .map_err(|_| JsValue::from_str("Invalid firmware version format"))?;
+    let size = parse_board_size(&board_size).map_err(|e| JsValue::from_str(&e))?;
+    Ok(onerom_gen::supports_board_size(version, size))
+}
+
+/// `board_size` as a [`BoardSize`].
+fn parse_board_size(board_size: &str) -> Result<BoardSize, String> {
+    board_size
+        .parse()
+        .map_err(|e| format!("Unknown board size {board_size}: {e}"))
+}
+
+/// Whether firmware `version` supports reserved pins.
+#[wasm_bindgen]
+pub fn supports_reserved_pins(version: String) -> Result<bool, JsValue> {
+    let version = FirmwareVersion::try_from_str(&version)
+        .map_err(|_| JsValue::from_str("Invalid firmware version format"))?;
+    Ok(version >= onerom_gen::MIN_RESERVED_PINS_VERSION)
+}
+
+/// The image select pins the firmware reads on `board` with `reserved`
+/// reserved, lowest bit first. Each is a config name, for example "sel_a".
+///
+/// `reserved` holds entries as the config's `reserved_pins` does. An entry the
+/// board can't reserve fails with onerom-gen's message.
+#[wasm_bindgen]
+pub fn image_select_pins(board: String, reserved: Vec<String>) -> Result<Vec<String>, JsValue> {
+    let board = Board::try_from_str(&board)
+        .ok_or_else(|| JsValue::from_str(&format!("Unknown board: {board}")))?;
+
+    // A config holding only the entries resolves them as a build does.
+    let mut config = onerom_gen::Config::new(String::new(), Vec::new());
+    config.reserved_pins = reserved
+        .iter()
+        .map(|entry| {
+            parse_pin(entry).map_err(|_| {
+                let entry = entry.trim().to_string();
+                JsValue::from_str(&onerom_gen::Error::ReservedPinNotAPin { entry }.to_string())
+            })
+        })
+        .collect::<Result<_, _>>()?;
+    let reserved = config
+        .reserved_pins_on(board)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+
+    Ok(reserved
+        .select_pins_read(&board)
+        .map(|pin| pin.to_string())
+        .collect())
+}
+
 // PCB/Board
 
 /// One ROM PCB/Board information structure
@@ -764,6 +1139,8 @@ pub struct BoardInfo {
     // Capabilities
     has_usb: bool,
     supports_multi_chip_sets: bool,
+    // The board sizes the board supports, smallest first ("M", "L")
+    board_sizes: Vec<String>,
 
     // Physical jumper header, column by column (None if this board's header
     // layout has not yet been characterised, in which case a consumer should
@@ -870,6 +1247,11 @@ pub fn board_info(name: String) -> Result<BoardInfo, JsValue> {
 
         has_usb: board.has_usb(),
         supports_multi_chip_sets: board.supports_multi_chip_sets(),
+        board_sizes: BoardSize::supported_values()
+            .iter()
+            .filter(|&&size| onerom_gen::board_supports_size(board, size))
+            .map(|size| size.name().to_string())
+            .collect(),
 
         jumper_header: board.jumper_header().map(|h| JumperHeaderInfo {
             columns: h
@@ -1027,8 +1409,7 @@ pub fn gen_builder_from_json(
     let family = Family::try_from_str(&family).ok_or("Unknown MCU family".to_string())?;
 
     Ok(WasmGenBuilder(
-        GenBuilder::from_json(version, family, config_json)
-            .map_err(|e| format!("Error creating GenBuilder: {e:?}"))?,
+        GenBuilder::from_json(version, family, config_json).map_err(|e| e.to_string())?,
     ))
 }
 
@@ -1103,17 +1484,14 @@ pub fn accept_license(builder: &mut WasmGenBuilder, license: WasmLicense) -> Res
     builder
         .0
         .accept_license(&license)
-        .map_err(|e| format!("Error accepting license: {e:?}"))
+        .map_err(|e| e.to_string())
 }
 
 /// Add a retrieved file to the builder
 #[wasm_bindgen]
 pub fn gen_add_file(builder: &mut WasmGenBuilder, id: usize, data: Vec<u8>) -> Result<(), String> {
     let file_data = FileData::new(id, data);
-    builder
-        .0
-        .add_file(file_data)
-        .map_err(|e| format!("Error adding file: {e:?}"))
+    builder.0.add_file(file_data).map_err(|e| e.to_string())
 }
 
 /// Build the firmware image from the builder and properties.
@@ -1133,7 +1511,7 @@ pub fn gen_build(builder: &WasmGenBuilder, properties: JsValue) -> Result<WasmIm
         .0
         .build(props)
         .map(|(firmware_image, metadata_json)| WasmImages(firmware_image, metadata_json))
-        .map_err(|e| format!("Error building firmware image: {e:?}"))
+        .map_err(|e| e.to_string())
 }
 
 /// Retrieve the config description from the builder
@@ -1157,7 +1535,247 @@ pub fn gen_build_validation(builder: &WasmGenBuilder, properties: JsValue) -> Re
     builder
         .0
         .build_validation(&props)
-        .map_err(|e| format!("Not ready to build: {e:?}"))
+        .map_err(|e| e.to_string())
+}
+
+/// A ROM slot whose layout uses a reserved pin, from
+/// [`gen_slots_using_reserved_pins`].
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct WasmReservedPinInUse {
+    /// The slot's index among ROM slots, plugins not counted.
+    pub slot: usize,
+    /// The pin's silkscreen label, for example "X1".
+    pub pin: String,
+}
+
+/// Each ROM slot whose layout uses a reserved pin on the board in
+/// `properties`, with the first reserved pin it uses. `properties` is as for
+/// [`gen_build`].
+///
+/// Works before any file is added.
+#[wasm_bindgen]
+pub fn gen_slots_using_reserved_pins(
+    builder: &WasmGenBuilder,
+    properties: JsValue,
+) -> Result<Vec<WasmReservedPinInUse>, String> {
+    let props: FirmwareProperties = serde_wasm_bindgen::from_value(properties)
+        .map_err(|e| format!("Error deserializing properties: {}", e))?;
+
+    builder
+        .0
+        .slots_using_reserved_pins(&props)
+        .map(|slots| {
+            slots
+                .into_iter()
+                .map(|(slot, pin)| WasmReservedPinInUse {
+                    slot,
+                    pin: pin.silkscreen().to_string(),
+                })
+                .collect()
+        })
+        .map_err(|e| e.to_string())
+}
+
+// ============================================================
+// Flash
+// ============================================================
+//
+// Where a build places the firmware and slots on a board's flash chips, and the
+// flash operations that program an image file. `onerom-gen` and `onerom-app`
+// decide both, so the web programmer lays out and programs an image as the CLI
+// does.
+
+/// The flash chips of a board with MCU variant `mcu` and size `board_size`.
+fn flash_chips(mcu: &str, board_size: &str) -> Result<FlashChips, String> {
+    let variant =
+        Variant::try_from_str(mcu).ok_or_else(|| format!("Unknown MCU variant: {mcu}"))?;
+    Ok(FlashChips::new(variant, parse_board_size(board_size)?))
+}
+
+/// One flash operation from [`flash_plan`].
+#[derive(Debug, PartialEq, Eq, Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+#[serde(tag = "op", rename_all = "lowercase")]
+pub enum FlashStepJs {
+    /// Erase whole 4KB sectors.
+    Erase {
+        /// The first address to erase.
+        addr: u32,
+        /// The bytes to erase.
+        len: u32,
+    },
+    /// Write to erased flash.
+    Write {
+        /// The first address to write.
+        addr: u32,
+        /// Where the bytes to write start in the image.
+        offset: u32,
+        /// The bytes to write.
+        len: u32,
+    },
+}
+
+/// The flash operations that program `image`, an image file, onto a board
+/// with MCU variant `mcu` and size `board_size`, in the order to run them.
+///
+/// Fails with "second_chip_required" where the image uses a second flash chip
+/// the board doesn't have, and "too_large" where the image is larger than the
+/// board's flash.
+#[wasm_bindgen]
+pub fn flash_plan(
+    image: Vec<u8>,
+    mcu: String,
+    board_size: String,
+) -> Result<Vec<FlashStepJs>, JsValue> {
+    flash_steps(&image, &mcu, &board_size).map_err(|e| JsValue::from_str(&e))
+}
+
+/// [`flash_plan`] returning its error as a string.
+fn flash_steps(image: &[u8], mcu: &str, board_size: &str) -> Result<Vec<FlashStepJs>, String> {
+    let chips = flash_chips(mcu, board_size)?;
+    let plan = FlashPlan::new(image, &chips).map_err(|e| {
+        match e {
+            FlashPlanError::SecondChipRequired => "second_chip_required",
+            FlashPlanError::TooLarge => "too_large",
+        }
+        .to_string()
+    })?;
+    plan.steps()
+        .iter()
+        .map(|step| match *step {
+            FlashStep::Erase { addr, len } => Ok(FlashStepJs::Erase { addr, len }),
+            // `data` is a slice of `image`.
+            FlashStep::Write { addr, data } => Ok(FlashStepJs::Write {
+                addr,
+                offset: (data.as_ptr() as usize - image.as_ptr() as usize) as u32,
+                len: data.len() as u32,
+            }),
+            _ => Err("unknown_step".to_string()),
+        })
+        .collect()
+}
+
+/// What a [`FlashSection`] holds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Tsify)]
+#[serde(rename_all = "lowercase")]
+pub enum FlashSectionKind {
+    /// The firmware and its metadata.
+    Firmware,
+    /// A ROM or plugin slot.
+    Slot,
+    /// The space left at the end of the first chip where a slot is on the
+    /// second chip.
+    Unused,
+}
+
+/// A section of a [`FlashLayout`].
+#[derive(Debug, PartialEq, Eq, Serialize, Tsify)]
+pub struct FlashSection {
+    /// What the section holds.
+    pub kind: FlashSectionKind,
+    /// A slot's index in `slot_sizes`. `None` for any other section.
+    pub slot: Option<u32>,
+    /// The section's start in bytes from the start of the first chip. The
+    /// second chip follows the first.
+    pub offset: u32,
+    /// The section's length in bytes.
+    pub len: u32,
+}
+
+/// Where a build places the firmware and each slot, for the Builder's
+/// capacity bar.
+#[derive(Debug, PartialEq, Eq, Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct FlashLayout {
+    /// The first chip's length plus the second chip's, where the board has
+    /// one.
+    pub total: u32,
+    /// The sections, in flash order.
+    pub sections: Vec<FlashSection>,
+    /// The first slot that fits neither chip. `sections` then holds only the
+    /// slots before it.
+    pub does_not_fit: Option<u32>,
+}
+
+/// Where a build places the firmware and each slot on a board with MCU
+/// variant `mcu` and size `board_size`.
+///
+/// `slot_sizes` is every slot's size in config order, plugins first. The slots
+/// are placed with the build's own code.
+#[wasm_bindgen]
+pub fn flash_layout(
+    mcu: String,
+    board_size: String,
+    slot_sizes: Vec<u32>,
+) -> Result<FlashLayout, JsValue> {
+    layout(&mcu, &board_size, &slot_sizes).map_err(|e| JsValue::from_str(&e))
+}
+
+/// [`flash_layout`] returning its error as a string.
+fn layout(mcu: &str, board_size: &str, sizes: &[u32]) -> Result<FlashLayout, String> {
+    let chips = flash_chips(mcu, board_size)?;
+    let (addrs, does_not_fit) = match slot_addresses(&chips, sizes) {
+        Ok(addrs) => (addrs, None),
+        // Placement is in order, so the slots before this one are where they
+        // were without it.
+        Err(onerom_gen::Error::SlotDoesNotFit { slot }) => {
+            let addrs = slot_addresses(&chips, &sizes[..slot]).map_err(|e| e.to_string())?;
+            (addrs, Some(slot as u32))
+        }
+        Err(e) => return Err(e.to_string()),
+    };
+
+    let first = chips.first();
+    let first_len = first.end - first.start;
+    let second = chips.second();
+    let firmware_len = chips.rom_data_start() - first.start;
+
+    // Each chip's slots in address order, which is config order because
+    // placement fills each chip from its start.
+    let mut on_first = Vec::new();
+    let mut on_second = Vec::new();
+    for (slot, (&addr, &len)) in addrs.iter().zip(sizes).enumerate() {
+        let section = |offset| FlashSection {
+            kind: FlashSectionKind::Slot,
+            slot: Some(slot as u32),
+            offset,
+            len,
+        };
+        match &second {
+            Some(chip) if chip.contains(&addr) => {
+                on_second.push(section(first_len + (addr - chip.start)))
+            }
+            _ => on_first.push(section(addr - first.start)),
+        }
+    }
+
+    let first_used = on_first
+        .last()
+        .map_or(firmware_len, |section| section.offset + section.len);
+    let unused = (!on_second.is_empty() && first_used < first_len).then_some(FlashSection {
+        kind: FlashSectionKind::Unused,
+        slot: None,
+        offset: first_used,
+        len: first_len - first_used,
+    });
+
+    let firmware = FlashSection {
+        kind: FlashSectionKind::Firmware,
+        slot: None,
+        offset: 0,
+        len: firmware_len,
+    };
+    let sections = core::iter::once(firmware)
+        .chain(on_first)
+        .chain(unused)
+        .chain(on_second)
+        .collect();
+    Ok(FlashLayout {
+        total: first_len + second.map_or(0, |chip| chip.end - chip.start),
+        sections,
+        does_not_fit,
+    })
 }
 // ============================================================
 // Plugins
@@ -1167,22 +1785,22 @@ pub fn gen_build_validation(builder: &WasmGenBuilder, properties: JsValue) -> Re
 // heavy lifting lives in `onerom-app`; this layer is a thin WASM binding.
 //
 // Fetching is delegated back to JavaScript: `PluginCatalog::load` is given a JS
-// async callback `(url) => Uint8Array`, wrapped as an `onerom_app::PluginFetch`
+// async callback `(url) => Uint8Array`, wrapped as an `onerom_app::Fetch`
 // so `onerom-app` orchestrates the manifest fetches while JS performs them. The
 // plugin *binaries* are not fetched here - they are fetched by the existing
 // build pipeline (`gen_file_specs` yields a spec per plugin binary URL, which
 // JS fetches and passes to `gen_add_file`), with SHA-256 verification done in
 // JS against the digest returned by `newest_compatible`.
 
-/// A JavaScript-backed [`onerom_app::PluginFetch`] implementation.
+/// A JavaScript-backed [`onerom_app::Fetch`] implementation.
 ///
 /// Wraps a JS async callback of the form `(url: string) => Promise<Uint8Array>`.
-/// Single-threaded (WASM), so the non-`Send` `LocalPluginFetch` variant is used.
+/// Single-threaded (WASM), so the non-`Send` `LocalFetch` variant is used.
 struct JsFetch {
     callback: js_sys::Function,
 }
 
-impl onerom_app::LocalPluginFetch for JsFetch {
+impl onerom_app::LocalFetch for JsFetch {
     type Error = String;
 
     async fn fetch(&self, source: &str) -> Result<Vec<u8>, Self::Error> {
