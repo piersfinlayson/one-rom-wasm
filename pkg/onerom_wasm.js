@@ -413,6 +413,59 @@ export function file_formats() {
 }
 
 /**
+ * Where a build places the firmware and each slot on a board with MCU
+ * variant `mcu` and size `board_size`.
+ *
+ * `slot_sizes` is every slot's size in config order, plugins first. The slots
+ * are placed with the build's own code.
+ * @param {string} mcu
+ * @param {string} board_size
+ * @param {Uint32Array} slot_sizes
+ * @returns {FlashLayout}
+ */
+export function flash_layout(mcu, board_size, slot_sizes) {
+    const ptr0 = passStringToWasm0(mcu, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(board_size, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ptr2 = passArray32ToWasm0(slot_sizes, wasm.__wbindgen_malloc);
+    const len2 = WASM_VECTOR_LEN;
+    const ret = wasm.flash_layout(ptr0, len0, ptr1, len1, ptr2, len2);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
+}
+
+/**
+ * The flash operations that program `image`, an image file, onto a board
+ * with MCU variant `mcu` and size `board_size`, in the order to run them.
+ *
+ * Fails with "second_chip_required" where the image uses a second flash chip
+ * the board doesn't have, and "too_large" where the image is larger than the
+ * board's flash.
+ * @param {Uint8Array} image
+ * @param {string} mcu
+ * @param {string} board_size
+ * @returns {FlashStepJs[]}
+ */
+export function flash_plan(image, mcu, board_size) {
+    const ptr0 = passArray8ToWasm0(image, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(mcu, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ptr2 = passStringToWasm0(board_size, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len2 = WASM_VECTOR_LEN;
+    const ret = wasm.flash_plan(ptr0, len0, ptr1, len1, ptr2, len2);
+    if (ret[3]) {
+        throw takeFromExternrefTable0(ret[2]);
+    }
+    var v4 = getArrayJsValueFromWasm0(ret[0], ret[1]);
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v4;
+}
+
+/**
  * Add a retrieved file to the builder
  * @param {WasmGenBuilder} builder
  * @param {number} id
@@ -543,6 +596,51 @@ export function gen_licenses(builder) {
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]);
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
+}
+
+/**
+ * Each ROM slot whose layout uses a reserved pin on the board in
+ * `properties`, with the first reserved pin it uses. `properties` is as for
+ * [`gen_build`].
+ *
+ * Works before any file is added.
+ * @param {WasmGenBuilder} builder
+ * @param {any} properties
+ * @returns {WasmReservedPinInUse[]}
+ */
+export function gen_slots_using_reserved_pins(builder, properties) {
+    _assertClass(builder, WasmGenBuilder);
+    const ret = wasm.gen_slots_using_reserved_pins(builder.__wbg_ptr, properties);
+    if (ret[3]) {
+        throw takeFromExternrefTable0(ret[2]);
+    }
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]);
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
+}
+
+/**
+ * The image select pins the firmware reads on `board` with `reserved`
+ * reserved, lowest bit first. Each is a config name, for example "sel_a".
+ *
+ * `reserved` holds entries as the config's `reserved_pins` does. An entry the
+ * board can't reserve fails with onerom-gen's message.
+ * @param {string} board
+ * @param {string[]} reserved
+ * @returns {string[]}
+ */
+export function image_select_pins(board, reserved) {
+    const ptr0 = passStringToWasm0(board, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArrayJsValueToWasm0(reserved, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.image_select_pins(ptr0, len0, ptr1, len1);
+    if (ret[3]) {
+        throw takeFromExternrefTable0(ret[2]);
+    }
+    var v3 = getArrayJsValueFromWasm0(ret[0], ret[1]);
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v3;
 }
 
 /**
@@ -698,7 +796,7 @@ export function min_schema_version() {
  *
  * Accepts a complete `.bin`, the first 64KB of a flash dump, or an entire
  * flash dump. Handles both pre-v0.7.0 (original) and v0.7.0+ (schema) firmware
- * via `Parser::parse_device`.
+ * via `Parser::parse_device`, and One ROM Lab via `LabParser`.
  *
  * The plugin/ROM list comes from flash. Whenever the parser follows a runtime
  * pointer (into RAM), `read_cb` is invoked to fetch those bytes on demand —
@@ -708,14 +806,37 @@ export function min_schema_version() {
  *
  * `read_cb` is a JS `async (addr: number, len: number) => Uint8Array` returning
  * exactly `len` bytes at `addr` (see [`CallbackReader`]).
+ *
+ * `otp_cb` reads the board's OTP (see [`JsOtp`]). With it the summary has the
+ * board's size, from runtime info where One ROM records it and from OTP
+ * otherwise, as the CLI reads it. It also has the board type the board is
+ * commissioned as. `undefined` leaves both out.
  * @param {Uint8Array} flash
  * @param {Function} read_cb
+ * @param {Function | null} [otp_cb]
  * @returns {Promise<DeviceSummary>}
  */
-export function parse_firmware(flash, read_cb) {
+export function parse_firmware(flash, read_cb, otp_cb) {
     const ptr0 = passArray8ToWasm0(flash, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.parse_firmware(ptr0, len0, read_cb);
+    const ret = wasm.parse_firmware(ptr0, len0, read_cb, isLikeNone(otp_cb) ? 0 : addToExternrefTable0(otp_cb));
+    return ret;
+}
+
+/**
+ * Parse an image file into a [`DeviceSummary`].
+ *
+ * A file longer than the first flash chip holds the second chip's contents
+ * after the first chip's. A file whose slots don't match its length or the
+ * flash chips is `corrupt`, and the last of its `parse_errors` says why.
+ * Otherwise the summary is the one [`parse_firmware`] returns for flash alone.
+ * @param {Uint8Array} data
+ * @returns {Promise<DeviceSummary>}
+ */
+export function parse_image_file(data) {
+    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.parse_image_file(ptr0, len0);
     return ret;
 }
 
@@ -779,6 +900,40 @@ export function supported_chip_types() {
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]);
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
+}
+
+/**
+ * Whether firmware `version` supports a `board_size` board ("M" or "L").
+ * Firmware before 0.8.0 supports only M.
+ * @param {string} version
+ * @param {string} board_size
+ * @returns {boolean}
+ */
+export function supports_board_size(version, board_size) {
+    const ptr0 = passStringToWasm0(version, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(board_size, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.supports_board_size(ptr0, len0, ptr1, len1);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return ret[0] !== 0;
+}
+
+/**
+ * Whether firmware `version` supports reserved pins.
+ * @param {string} version
+ * @returns {boolean}
+ */
+export function supports_reserved_pins(version) {
+    const ptr0 = passStringToWasm0(version, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.supports_reserved_pins(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return ret[0] !== 0;
 }
 
 /**
@@ -903,6 +1058,10 @@ function __wbg_get_imports() {
             const ret = arg0.call(arg1, arg2);
             return ret;
         }, arguments); },
+        __wbg_call_939a2607c4484b0b: function() { return handleError(function (arg0, arg1, arg2, arg3, arg4) {
+            const ret = arg0.call(arg1, arg2, arg3, arg4);
+            return ret;
+        }, arguments); },
         __wbg_debug_52bda05ddf50b736: function(arg0) {
             console.debug(arg0);
         },
@@ -993,7 +1152,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined_______true_(a, state0.b, arg0, arg1);
+                        return wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined_______true_(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -1067,8 +1226,8 @@ function __wbg_get_imports() {
             console.warn(arg0);
         },
         __wbindgen_generic_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 294, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___wasm_bindgen_63a46d96b29ae508___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_63a46d96b29ae508___JsError___true_);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 322, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___wasm_bindgen_740f87ab467470cf___JsValue__core_608f92abc48d28da___result__Result_____wasm_bindgen_740f87ab467470cf___JsError___true_);
             return ret;
         },
         __wbindgen_generic_0000000000000002: function(arg0) {
@@ -1102,15 +1261,15 @@ function __wbg_get_imports() {
     };
 }
 
-function wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___wasm_bindgen_63a46d96b29ae508___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_63a46d96b29ae508___JsError___true_(arg0, arg1, arg2) {
-    const ret = wasm.wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___wasm_bindgen_63a46d96b29ae508___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_63a46d96b29ae508___JsError___true_(arg0, arg1, arg2);
+function wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___wasm_bindgen_740f87ab467470cf___JsValue__core_608f92abc48d28da___result__Result_____wasm_bindgen_740f87ab467470cf___JsError___true_(arg0, arg1, arg2) {
+    const ret = wasm.wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___wasm_bindgen_740f87ab467470cf___JsValue__core_608f92abc48d28da___result__Result_____wasm_bindgen_740f87ab467470cf___JsError___true_(arg0, arg1, arg2);
     if (ret[1]) {
         throw takeFromExternrefTable0(ret[0]);
     }
 }
 
-function wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined_______true_(arg0, arg1, arg2, arg3) {
-    wasm.wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined_______true_(arg0, arg1, arg2, arg3);
+function wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined_______true_(arg0, arg1, arg2, arg3) {
+    wasm.wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined_______true_(arg0, arg1, arg2, arg3);
 }
 
 const PluginCatalogFinalization = (typeof FinalizationRegistry === 'undefined')
@@ -1238,6 +1397,14 @@ function getStringFromWasm0(ptr, len) {
     return decodeText(ptr >>> 0, len);
 }
 
+let cachedUint32ArrayMemory0 = null;
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
 let cachedUint8ArrayMemory0 = null;
 function getUint8ArrayMemory0() {
     if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
@@ -1287,10 +1454,27 @@ function makeMutClosure(arg0, arg1, f) {
     return real;
 }
 
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4, 4) >>> 0;
+    getUint32ArrayMemory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
 function passArray8ToWasm0(arg, malloc) {
     const ptr = malloc(arg.length * 1, 1) >>> 0;
     getUint8ArrayMemory0().set(arg, ptr / 1);
     WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function passArrayJsValueToWasm0(array, malloc) {
+    const ptr = malloc(array.length * 4, 4) >>> 0;
+    for (let i = 0; i < array.length; i++) {
+        const add = addToExternrefTable0(array[i]);
+        getDataViewMemory0().setUint32(ptr + 4 * i, add, true);
+    }
+    WASM_VECTOR_LEN = array.length;
     return ptr;
 }
 
@@ -1372,6 +1556,7 @@ function __wbg_finalize_init(instance, module) {
     wasm = instance.exports;
     wasmModule = module;
     cachedDataViewMemory0 = null;
+    cachedUint32ArrayMemory0 = null;
     cachedUint8ArrayMemory0 = null;
     wasm.__wbindgen_start();
     return wasm;

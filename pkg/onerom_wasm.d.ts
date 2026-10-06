@@ -1,6 +1,21 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+ * A ROM slot whose layout uses a reserved pin, from
+ * [`gen_slots_using_reserved_pins`].
+ */
+export interface WasmReservedPinInUse {
+    /**
+     * The slot's index among ROM slots, plugins not counted.
+     */
+    slot: number;
+    /**
+     * The pin's silkscreen label, for example "X1".
+     */
+    pin: string;
+}
+
+/**
  * A plugin's resolved display information, as returned to JavaScript.
  *
  * `label` is always present and displayable: the manifest display name for an
@@ -29,6 +44,29 @@ export interface WasmPluginLabel {
      * Description, for official plugins only (when the manifest was reachable).
      */
     description: string | undefined;
+}
+
+/**
+ * A section of a [`FlashLayout`].
+ */
+export interface FlashSection {
+    /**
+     * What the section holds.
+     */
+    kind: FlashSectionKind;
+    /**
+     * A slot's index in `slot_sizes`. `None` for any other section.
+     */
+    slot: number | undefined;
+    /**
+     * The section's start in bytes from the start of the first chip. The
+     * second chip follows the first.
+     */
+    offset: number;
+    /**
+     * The section's length in bytes.
+     */
+    len: number;
 }
 
 /**
@@ -159,6 +197,7 @@ export interface BoardInfo {
     x_jumper_pull: number;
     has_usb: boolean;
     supports_multi_chip_sets: boolean;
+    board_sizes: string[];
     jumper_header: JumperHeaderInfo | undefined;
 }
 
@@ -183,6 +222,11 @@ export interface HeaderColumnInfo {
      */
     row3: string[] | undefined;
 }
+
+/**
+ * One flash operation from [`flash_plan`].
+ */
+export type FlashStepJs = { op: "erase"; addr: number; len: number } | { op: "write"; addr: number; offset: number; len: number };
 
 /**
  * Physical jumper-header descriptor (mirrors `onerom_config::hw::JumperHeader`)
@@ -261,6 +305,11 @@ export interface WasmPluginRelease {
 }
 
 /**
+ * The member of the One ROM family a [`DeviceSummary`] describes.
+ */
+export type Firmware = "onerom" | "lab";
+
+/**
  * Web-focused summary of a parsed One ROM device.
  *
  * Everything the browser tool needs to render the device panel, flattened
@@ -268,6 +317,10 @@ export interface WasmPluginRelease {
  * the details view.
  */
 export interface DeviceSummary {
+    /**
+     * The firmware found, or `None` where it isn't recognised.
+     */
+    firmware: Firmware | undefined;
     /**
      * Firmware version, "major.minor.patch".
      */
@@ -303,6 +356,33 @@ export interface DeviceSummary {
      */
     running: boolean;
     /**
+     * The board's size, "M" or "L". A board recording another size, or none,
+     * is "M". `None` for One ROM Lab, for an image file and where
+     * `parse_firmware` is called without `otp_cb`.
+     */
+    board_size: string | undefined;
+    /**
+     * The board size the device records: "M", "L", "other" or "unknown".
+     * "unknown" covers firmware that doesn't record a size, a size this build
+     * doesn't know and a size that couldn't be read. `None` where
+     * `board_size` is.
+     */
+    recorded_board_size: string | undefined;
+    /**
+     * The board type the board's current commissioning instance records, such
+     * as "fire-40-a". Text that isn't a known board type has its control
+     * characters escaped. `None` where OTP doesn't have a current instance or
+     * couldn't be read, for One ROM Lab, for an image file and where
+     * `parse_firmware` is called without `otp_cb`.
+     */
+    commissioned_board: string | undefined;
+    /**
+     * The reserved pins' silkscreen labels, for example `["SEL_C", "X1"]`.
+     * `None` where the metadata predates reserved pins or wasn't read, and
+     * for One ROM Lab.
+     */
+    reserved_pins: string[] | undefined;
+    /**
      * Plugin entries (system, user), in slot order.
      */
     plugins: RomSummary[];
@@ -317,9 +397,35 @@ export interface DeviceSummary {
     full_reread_size: number | undefined;
     /**
      * Full parse serialised as JSON, for the details view. Externally tagged
-     * by format (`Original` / `Schema`).
+     * by format (`Original` / `Schema`), or `"Lab"` for One ROM Lab.
      */
     dump: string;
+}
+
+/**
+ * What a [`FlashSection`] holds.
+ */
+export type FlashSectionKind = "firmware" | "slot" | "unused";
+
+/**
+ * Where a build places the firmware and each slot, for the Builder's
+ * capacity bar.
+ */
+export interface FlashLayout {
+    /**
+     * The first chip's length plus the second chip's, where the board has
+     * one.
+     */
+    total: number;
+    /**
+     * The sections, in flash order.
+     */
+    sections: FlashSection[];
+    /**
+     * The first slot that fits neither chip. `sections` then holds only the
+     * slots before it.
+     */
+    does_not_fit: number | undefined;
 }
 
 
@@ -447,6 +553,25 @@ export function extra_chip_types_for_board(board_name: string): string[];
 export function file_formats(): FileFormatInfo[];
 
 /**
+ * Where a build places the firmware and each slot on a board with MCU
+ * variant `mcu` and size `board_size`.
+ *
+ * `slot_sizes` is every slot's size in config order, plugins first. The slots
+ * are placed with the build's own code.
+ */
+export function flash_layout(mcu: string, board_size: string, slot_sizes: Uint32Array): FlashLayout;
+
+/**
+ * The flash operations that program `image`, an image file, onto a board
+ * with MCU variant `mcu` and size `board_size`, in the order to run them.
+ *
+ * Fails with "second_chip_required" where the image uses a second flash chip
+ * the board doesn't have, and "too_large" where the image is larger than the
+ * board's flash.
+ */
+export function flash_plan(image: Uint8Array, mcu: string, board_size: string): FlashStepJs[];
+
+/**
  * Add a retrieved file to the builder
  */
 export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
@@ -495,6 +620,24 @@ export function gen_file_specs(builder: WasmGenBuilder): WasmFileSpec[];
  * Get the list of licenses that must be validated from the builder
  */
 export function gen_licenses(builder: WasmGenBuilder): WasmLicense[];
+
+/**
+ * Each ROM slot whose layout uses a reserved pin on the board in
+ * `properties`, with the first reserved pin it uses. `properties` is as for
+ * [`gen_build`].
+ *
+ * Works before any file is added.
+ */
+export function gen_slots_using_reserved_pins(builder: WasmGenBuilder, properties: any): WasmReservedPinInUse[];
+
+/**
+ * The image select pins the firmware reads on `board` with `reserved`
+ * reserved, lowest bit first. Each is a config name, for example "sel_a".
+ *
+ * `reserved` holds entries as the config's `reserved_pins` does. An entry the
+ * board can't reserve fails with onerom-gen's message.
+ */
+export function image_select_pins(board: string, reserved: string[]): string[];
 
 /**
  * Flash footprint, in bytes, of one image of `chip_type` on `board`.
@@ -560,7 +703,7 @@ export function min_schema_version(): string;
  *
  * Accepts a complete `.bin`, the first 64KB of a flash dump, or an entire
  * flash dump. Handles both pre-v0.7.0 (original) and v0.7.0+ (schema) firmware
- * via `Parser::parse_device`.
+ * via `Parser::parse_device`, and One ROM Lab via `LabParser`.
  *
  * The plugin/ROM list comes from flash. Whenever the parser follows a runtime
  * pointer (into RAM), `read_cb` is invoked to fetch those bytes on demand —
@@ -570,8 +713,23 @@ export function min_schema_version(): string;
  *
  * `read_cb` is a JS `async (addr: number, len: number) => Uint8Array` returning
  * exactly `len` bytes at `addr` (see [`CallbackReader`]).
+ *
+ * `otp_cb` reads the board's OTP (see [`JsOtp`]). With it the summary has the
+ * board's size, from runtime info where One ROM records it and from OTP
+ * otherwise, as the CLI reads it. It also has the board type the board is
+ * commissioned as. `undefined` leaves both out.
  */
-export function parse_firmware(flash: Uint8Array, read_cb: Function): Promise<DeviceSummary>;
+export function parse_firmware(flash: Uint8Array, read_cb: Function, otp_cb?: Function | null): Promise<DeviceSummary>;
+
+/**
+ * Parse an image file into a [`DeviceSummary`].
+ *
+ * A file longer than the first flash chip holds the second chip's contents
+ * after the first chip's. A file whose slots don't match its length or the
+ * flash chips is `corrupt`, and the last of its `parse_errors` says why.
+ * Otherwise the summary is the one [`parse_firmware`] returns for flash alone.
+ */
+export function parse_image_file(data: Uint8Array): Promise<DeviceSummary>;
 
 /**
  * Fetch the plugin catalogue and every plugin's releases, returning a handle.
@@ -610,6 +768,17 @@ export function supported_chip_type_aliases(): string[];
 export function supported_chip_types(): string[];
 
 /**
+ * Whether firmware `version` supports a `board_size` board ("M" or "L").
+ * Firmware before 0.8.0 supports only M.
+ */
+export function supports_board_size(version: string, board_size: string): boolean;
+
+/**
+ * Whether firmware `version` supports reserved pins.
+ */
+export function supports_reserved_pins(version: string): boolean;
+
+/**
  * WASM Library Version
  */
 export function version(): string;
@@ -638,6 +807,8 @@ export interface InitOutput {
     readonly chip_types: () => [number, number];
     readonly extra_chip_types_for_board: (a: number, b: number) => [number, number];
     readonly file_formats: () => [number, number];
+    readonly flash_layout: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
+    readonly flash_plan: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number, number];
     readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
     readonly gen_build: (a: number, b: any) => [number, number, number];
     readonly gen_build_validation: (a: number, b: any) => [number, number];
@@ -646,6 +817,8 @@ export interface InitOutput {
     readonly gen_description: (a: number) => [number, number];
     readonly gen_file_specs: (a: number) => [number, number];
     readonly gen_licenses: (a: number) => [number, number];
+    readonly gen_slots_using_reserved_pins: (a: number, b: any) => [number, number, number, number];
+    readonly image_select_pins: (a: number, b: number, c: number, d: number) => [number, number, number, number];
     readonly image_size: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
     readonly init: () => void;
     readonly mcu_chip_id: (a: number, b: number) => [number, number, number, number];
@@ -654,13 +827,16 @@ export interface InitOutput {
     readonly mcus: () => [number, number];
     readonly mcus_for_mcu_family: (a: number, b: number) => [number, number, number, number];
     readonly min_schema_version: () => [number, number];
-    readonly parse_firmware: (a: number, b: number, c: any) => any;
+    readonly parse_firmware: (a: number, b: number, c: any, d: number) => any;
+    readonly parse_image_file: (a: number, b: number) => any;
     readonly plugin_catalog: (a: any) => any;
     readonly plugincatalog_newest_compatible: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
     readonly plugincatalog_plugins: (a: number) => [number, number, number];
     readonly resolve_plugin_label: (a: number, b: number, c: number, d: any) => any;
     readonly supported_chip_type_aliases: () => [number, number];
     readonly supported_chip_types: () => [number, number];
+    readonly supports_board_size: (a: number, b: number, c: number, d: number) => [number, number, number];
+    readonly supports_reserved_pins: (a: number, b: number) => [number, number, number];
     readonly valueprettypair_pretty: (a: number) => [number, number];
     readonly valueprettypair_value: (a: number) => [number, number];
     readonly version: () => [number, number];
@@ -672,8 +848,8 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined___js_sys_9a9f93f03cc98e8d___Function_fn_wasm_bindgen_63a46d96b29ae508___JsValue_____wasm_bindgen_63a46d96b29ae508___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen_63a46d96b29ae508___convert__closures_____invoke___wasm_bindgen_63a46d96b29ae508___JsValue__core_ed718c3d60ebd546___result__Result_____wasm_bindgen_63a46d96b29ae508___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___wasm_bindgen_740f87ab467470cf___JsValue__core_608f92abc48d28da___result__Result_____wasm_bindgen_740f87ab467470cf___JsError___true_: (a: number, b: number, c: any) => [number, number];
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
