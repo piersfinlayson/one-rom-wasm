@@ -937,6 +937,21 @@ export function supports_reserved_pins(version) {
 }
 
 /**
+ * Whether firmware `version` supports standby mode.
+ * @param {string} version
+ * @returns {boolean}
+ */
+export function supports_standby(version) {
+    const ptr0 = passStringToWasm0(version, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.supports_standby(ptr0, len0);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return ret[0] !== 0;
+}
+
+/**
  * WASM Library Version
  * @returns {string}
  */

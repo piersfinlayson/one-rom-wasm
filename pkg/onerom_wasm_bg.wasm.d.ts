@@ -46,6 +46,7 @@ export const supported_chip_type_aliases: () => [number, number];
 export const supported_chip_types: () => [number, number];
 export const supports_board_size: (a: number, b: number, c: number, d: number) => [number, number, number];
 export const supports_reserved_pins: (a: number, b: number) => [number, number, number];
+export const supports_standby: (a: number, b: number) => [number, number, number];
 export const valueprettypair_pretty: (a: number) => [number, number];
 export const valueprettypair_value: (a: number) => [number, number];
 export const version: () => [number, number];

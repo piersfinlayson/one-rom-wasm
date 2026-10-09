@@ -779,6 +779,11 @@ export function supports_board_size(version: string, board_size: string): boolea
 export function supports_reserved_pins(version: string): boolean;
 
 /**
+ * Whether firmware `version` supports standby mode.
+ */
+export function supports_standby(version: string): boolean;
+
+/**
  * WASM Library Version
  */
 export function version(): string;
@@ -837,6 +842,7 @@ export interface InitOutput {
     readonly supported_chip_types: () => [number, number];
     readonly supports_board_size: (a: number, b: number, c: number, d: number) => [number, number, number];
     readonly supports_reserved_pins: (a: number, b: number) => [number, number, number];
+    readonly supports_standby: (a: number, b: number) => [number, number, number];
     readonly valueprettypair_pretty: (a: number) => [number, number];
     readonly valueprettypair_value: (a: number) => [number, number];
     readonly version: () => [number, number];
