@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.6.2 - Unreleased
+
 ## v0.6.1 - 2026-10-09
 
 Add `supports_standby`, which returns whether a firmware version supports
