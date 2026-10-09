@@ -17,7 +17,7 @@ use onerom_fw_parser::{
 };
 use onerom_gen::{Builder as GenBuilder, FileData, FlashChips, slot_addresses};
 use onerom_lab_parser::LabParser;
-use onerom_metadata::{MaybeKnown, OneromBoardSize};
+use onerom_metadata::{MaybeKnown, OneromBoardSize, OneromOverrideStates};
 
 /// Initialize logging and panic hook
 #[wasm_bindgen(start)]
@@ -1073,6 +1073,15 @@ pub fn supports_reserved_pins(version: String) -> Result<bool, JsValue> {
     let version = FirmwareVersion::try_from_str(&version)
         .map_err(|_| JsValue::from_str("Invalid firmware version format"))?;
     Ok(version >= onerom_gen::MIN_RESERVED_PINS_VERSION)
+}
+
+/// Whether firmware `version` supports standby mode.
+#[wasm_bindgen]
+pub fn supports_standby(version: String) -> Result<bool, JsValue> {
+    let version = FirmwareVersion::try_from_str(&version)
+        .map_err(|_| JsValue::from_str("Invalid firmware version format"))?;
+    // standby is None where `version` predates it.
+    Ok(OneromOverrideStates::from_raw(0, Some(version)).standby.is_some())
 }
 
 /// The image select pins the firmware reads on `board` with `reserved`

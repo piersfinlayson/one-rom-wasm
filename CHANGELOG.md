@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.6.1 - Unreleased
+## v0.6.1 - 2026-10-09
+
+Add `supports_standby`, which returns whether a firmware version supports
+standby mode.
 
 ## v0.6.0 - 2026-10-06
 
