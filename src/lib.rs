@@ -1523,6 +1523,30 @@ pub fn gen_build(builder: &WasmGenBuilder, properties: JsValue) -> Result<WasmIm
         .map_err(|e| e.to_string())
 }
 
+/// The firmware image of `base_firmware` plus [`gen_build`]'s metadata and ROM
+/// data, checked for the board in `properties`. `properties` is as for
+/// [`gen_build`].
+///
+/// Fails with the first problem found.
+#[wasm_bindgen]
+pub async fn gen_assemble(
+    properties: JsValue,
+    base_firmware: Vec<u8>,
+    metadata: Vec<u8>,
+    roms: Vec<u8>,
+) -> Result<Vec<u8>, String> {
+    let props: FirmwareProperties = serde_wasm_bindgen::from_value(properties)
+        .map_err(|e| format!("Error deserializing properties: {}", e))?;
+
+    let checked = onerom_app::assemble_image(&props, base_firmware, metadata, roms)
+        .await
+        .map_err(|e| e.to_string())?;
+    match checked.problems.first() {
+        Some(problem) => Err(problem.to_string()),
+        None => Ok(checked.image),
+    }
+}
+
 /// Retrieve the config description from the builder
 #[wasm_bindgen]
 pub fn gen_description(builder: &WasmGenBuilder) -> String {
@@ -1986,3 +2010,167 @@ pub async fn resolve_plugin_label(
 
     serde_wasm_bindgen::to_value(&out).map_err(|e| JsValue::from_str(&e.to_string()))
 }
+
+// ============================================================
+// Load
+// ============================================================
+
+/// A One ROM or image file loaded into the config that builds it and the bytes
+/// of every ROM it serves.
+#[wasm_bindgen]
+pub struct WasmLoaded(onerom_app::ReadBack);
+
+/// A ROM's file in a [`WasmLoaded`].
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct WasmLoadedFile {
+    /// The file's name, which the config's `file` contains.
+    pub name: String,
+    /// The ROM's slot, numbered from 0 not counting plugins. `None` for a
+    /// plugin.
+    pub slot: Option<usize>,
+    /// The ROM's index within its slot.
+    pub chip: usize,
+}
+
+#[wasm_bindgen]
+impl WasmLoaded {
+    /// The firmware version, `major.minor.patch`.
+    pub fn version(&self) -> String {
+        self.0.version.to_string()
+    }
+
+    /// The board's name, for example `fire-24-f`.
+    pub fn board(&self) -> String {
+        self.0.board.name().to_string()
+    }
+
+    /// The board's [`BoardSize`] name where known. For a file it's the
+    /// smallest size the image fits.
+    pub fn board_size(&self) -> Option<String> {
+        self.0.board_size.map(|size| size.name().to_string())
+    }
+
+    /// The config as JSON. A chip with bytes has a file's name as its `file`,
+    /// and a published plugin is listed by name.
+    pub fn config_json(&self) -> Result<String, JsValue> {
+        serde_json::to_string(&self.0.config).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    /// Each ROM's file, in config order.
+    pub fn files(&self) -> Vec<WasmLoadedFile> {
+        self.0
+            .files
+            .iter()
+            .map(|file| WasmLoadedFile {
+                name: file.name.clone(),
+                slot: file.slot,
+                chip: file.chip,
+            })
+            .collect()
+    }
+
+    /// The bytes of the file named `name`.
+    pub fn file(&self, name: String) -> Option<Vec<u8>> {
+        self.0.file(&name).map(<[u8]>::to_vec)
+    }
+
+    /// The settings the config couldn't recover.
+    pub fn problems(&self) -> Vec<WasmLoadedProblem> {
+        self.0
+            .problems
+            .iter()
+            .map(|problem| {
+                let (kind, set) = match problem {
+                    onerom_app::RecoveryProblem::ChipSelect { set } => ("chip_select", Some(*set)),
+                    onerom_app::RecoveryProblem::Override { set, .. } => ("override", Some(*set)),
+                    _ => ("other", None),
+                };
+                WasmLoadedProblem {
+                    kind: kind.to_string(),
+                    text: self.0.problem_subject(problem),
+                    set,
+                }
+            })
+            .collect()
+    }
+}
+
+/// A setting that couldn't be loaded into a [`WasmLoaded`]'s config.
+#[derive(Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
+pub struct WasmLoadedProblem {
+    /// `chip_select` for a slot's chip-select settings, `override` for a
+    /// firmware override, `other` for anything else.
+    pub kind: String,
+    /// The setting that couldn't be loaded, for example `Slot 3's chip-select
+    /// settings`.
+    pub text: String,
+    /// The chip set it's in, counting plugins.
+    pub set: Option<usize>,
+}
+
+/// Loads an image file. A file longer than the first flash chip contains
+/// the second chip's contents after the first chip's.
+#[wasm_bindgen]
+pub async fn load_file(data: Vec<u8>) -> Result<WasmLoaded, JsValue> {
+    onerom_app::read_back_file(&data)
+        .await
+        .map(WasmLoaded)
+        .map_err(load_error)
+}
+
+/// The rejection for `error`. Firmware newer than this build supports is an
+/// `Error` whose `firmware_too_new` is the firmware's version. Anything else
+/// is the error's text.
+fn load_error<E: core::fmt::Display>(error: onerom_app::ReadBackError<E>) -> JsValue {
+    match error {
+        onerom_app::ReadBackError::FirmwareTooNew { version } => {
+            let js_error = js_sys::Error::new(&error.to_string());
+            // Reflect::set fails only on a frozen or non-object target.
+            let _ = js_sys::Reflect::set(
+                &js_error,
+                &JsValue::from_str("firmware_too_new"),
+                &JsValue::from_str(&version.to_string()),
+            );
+            js_error.into()
+        }
+        error => JsValue::from_str(&error.to_string()),
+    }
+}
+
+/// Loads a One ROM.
+///
+/// `flash`, `read_cb` and `otp_cb` are as for [`parse_firmware`]. `read_cb`
+/// also reads each slot's data from either flash chip. Without `otp_cb` the
+/// board size is read from runtime info alone.
+#[wasm_bindgen]
+pub async fn load_device(
+    flash: Vec<u8>,
+    read_cb: js_sys::Function,
+    otp_cb: Option<js_sys::Function>,
+) -> Result<WasmLoaded, JsValue> {
+    let mut reader = CallbackReader::new(flash, 0x08000000, read_cb);
+    let parsed = Parser::new(&mut reader).parse_device().await;
+    let size = match otp_cb {
+        Some(callback) => {
+            let mut otp = JsOtp { callback };
+            let size = onerom_app::device_board_size(parsed.runtime_board_size(), || async {
+                onerom_app::read_board_size(&mut otp)
+                    .await
+                    .inspect_err(|e| log::debug!("Couldn't read the board size: {e}"))
+                    .ok()
+            })
+            .await;
+            onerom_app::known_board_size(size)
+        }
+        None => onerom_app::known_board_size(parsed.runtime_board_size()),
+    };
+    onerom_app::read_back(&parsed, &mut reader, size)
+        .await
+        .map(WasmLoaded)
+        .map_err(load_error)
+}
+
+#[cfg(test)]
+mod tests;

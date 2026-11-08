@@ -31,6 +31,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Test
+        run: wasm-pack test --node
+
       - name: Mark as development version
         if: github.ref == 'refs/heads/main'
         run: |

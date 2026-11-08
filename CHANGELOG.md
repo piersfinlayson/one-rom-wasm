@@ -1,6 +1,11 @@
 # Changelog
 
-## v0.6.2 - Unreleased
+## v0.6.2 - 2026-11-08
+
+Add `gen_assemble`, which combines and verifies built firmware.
+
+Add `load_file` and `load_device`, which return the configuration and ROM
+images of a firmware file or One ROM.
 
 ## v0.6.1 - 2026-10-09
 
