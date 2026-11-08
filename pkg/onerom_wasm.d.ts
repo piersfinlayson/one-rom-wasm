@@ -16,6 +16,25 @@ export interface WasmReservedPinInUse {
 }
 
 /**
+ * A ROM's file in a [`WasmLoaded`].
+ */
+export interface WasmLoadedFile {
+    /**
+     * The file's name, which the config's `file` contains.
+     */
+    name: string;
+    /**
+     * The ROM's slot, numbered from 0 not counting plugins. `None` for a
+     * plugin.
+     */
+    slot: number | undefined;
+    /**
+     * The ROM's index within its slot.
+     */
+    chip: number;
+}
+
+/**
  * A plugin's resolved display information, as returned to JavaScript.
  *
  * `label` is always present and displayable: the manifest display name for an
@@ -81,6 +100,26 @@ export interface FileFormatInfo {
     value: string;
     label: string;
     is_default: boolean;
+}
+
+/**
+ * A setting that couldn't be loaded into a [`WasmLoaded`]'s config.
+ */
+export interface WasmLoadedProblem {
+    /**
+     * `chip_select` for a slot's chip-select settings, `override` for a
+     * firmware override, `other` for anything else.
+     */
+    kind: string;
+    /**
+     * The setting that couldn't be loaded, for example `Slot 3's chip-select
+     * settings`.
+     */
+    text: string;
+    /**
+     * The chip set it's in, counting plugins.
+     */
+    set: number | undefined;
 }
 
 /**
@@ -503,6 +542,46 @@ export class WasmImages {
 }
 
 /**
+ * A One ROM or image file loaded into the config that builds it and the bytes
+ * of every ROM it serves.
+ */
+export class WasmLoaded {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * The board's name, for example `fire-24-f`.
+     */
+    board(): string;
+    /**
+     * The board's [`BoardSize`] name where known. For a file it's the
+     * smallest size the image fits.
+     */
+    board_size(): string | undefined;
+    /**
+     * The config as JSON. A chip with bytes has a file's name as its `file`,
+     * and a published plugin is listed by name.
+     */
+    config_json(): string;
+    /**
+     * The bytes of the file named `name`.
+     */
+    file(name: string): Uint8Array | undefined;
+    /**
+     * Each ROM's file, in config order.
+     */
+    files(): WasmLoadedFile[];
+    /**
+     * The settings the config couldn't recover.
+     */
+    problems(): WasmLoadedProblem[];
+    /**
+     * The firmware version, `major.minor.patch`.
+     */
+    version(): string;
+}
+
+/**
  * Accept a license for a specific file ID
  */
 export function accept_license(builder: WasmGenBuilder, license: WasmLicense): void;
@@ -528,7 +607,7 @@ export function boards_for_mcu_family(family_name: string): ValuePrettyPair[];
  * `data` is a raw binary image. An Intel HEX or S-record file matches
  * nothing. `undefined` where nothing is recognised or the checks disagree.
  */
-export function byte_order(data: Uint8Array): ByteOrderInfo | undefined;
+export function byte_order(data: Uint8Array | number[]): ByteOrderInfo | undefined;
 
 /**
  * Return a list of all aliases for all chip types
@@ -559,7 +638,7 @@ export function file_formats(): FileFormatInfo[];
  * `slot_sizes` is every slot's size in config order, plugins first. The slots
  * are placed with the build's own code.
  */
-export function flash_layout(mcu: string, board_size: string, slot_sizes: Uint32Array): FlashLayout;
+export function flash_layout(mcu: string, board_size: string, slot_sizes: Uint32Array | number[]): FlashLayout;
 
 /**
  * The flash operations that program `image`, an image file, onto a board
@@ -569,12 +648,21 @@ export function flash_layout(mcu: string, board_size: string, slot_sizes: Uint32
  * the board doesn't have, and "too_large" where the image is larger than the
  * board's flash.
  */
-export function flash_plan(image: Uint8Array, mcu: string, board_size: string): FlashStepJs[];
+export function flash_plan(image: Uint8Array | number[], mcu: string, board_size: string): FlashStepJs[];
 
 /**
  * Add a retrieved file to the builder
  */
-export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array): void;
+export function gen_add_file(builder: WasmGenBuilder, id: number, data: Uint8Array | number[]): void;
+
+/**
+ * The firmware image of `base_firmware` plus [`gen_build`]'s metadata and ROM
+ * data, checked for the board in `properties`. `properties` is as for
+ * [`gen_build`].
+ *
+ * Fails with the first problem found.
+ */
+export function gen_assemble(properties: any, base_firmware: Uint8Array | number[], metadata: Uint8Array | number[], roms: Uint8Array | number[]): Promise<Uint8Array>;
 
 /**
  * Build the firmware image from the builder and properties.
@@ -664,6 +752,21 @@ export function image_size(board: string, chip_type: string, version: string): n
 export function init(): void;
 
 /**
+ * Loads a One ROM.
+ *
+ * `flash`, `read_cb` and `otp_cb` are as for [`parse_firmware`]. `read_cb`
+ * also reads each slot's data from either flash chip. Without `otp_cb` the
+ * board size is read from runtime info alone.
+ */
+export function load_device(flash: Uint8Array | number[], read_cb: Function, otp_cb?: Function | null): Promise<WasmLoaded>;
+
+/**
+ * Loads an image file. A file longer than the first flash chip contains
+ * the second chip's contents after the first chip's.
+ */
+export function load_file(data: Uint8Array | number[]): Promise<WasmLoaded>;
+
+/**
  * Get MCU variant (probe-rs) chip ID
  */
 export function mcu_chip_id(variant_name: string): string;
@@ -719,7 +822,7 @@ export function min_schema_version(): string;
  * otherwise, as the CLI reads it. It also has the board type the board is
  * commissioned as. `undefined` leaves both out.
  */
-export function parse_firmware(flash: Uint8Array, read_cb: Function, otp_cb?: Function | null): Promise<DeviceSummary>;
+export function parse_firmware(flash: Uint8Array | number[], read_cb: Function, otp_cb?: Function | null): Promise<DeviceSummary>;
 
 /**
  * Parse an image file into a [`DeviceSummary`].
@@ -729,7 +832,7 @@ export function parse_firmware(flash: Uint8Array, read_cb: Function, otp_cb?: Fu
  * flash chips is `corrupt`, and the last of its `parse_errors` says why.
  * Otherwise the summary is the one [`parse_firmware`] returns for flash alone.
  */
-export function parse_image_file(data: Uint8Array): Promise<DeviceSummary>;
+export function parse_image_file(data: Uint8Array | number[]): Promise<DeviceSummary>;
 
 /**
  * Fetch the plugin catalogue and every plugin's releases, returning a handle.
@@ -802,6 +905,7 @@ export interface InitOutput {
     readonly __wbg_versioninfo_free: (a: number, b: number) => void;
     readonly __wbg_wasmgenbuilder_free: (a: number, b: number) => void;
     readonly __wbg_wasmimages_free: (a: number, b: number) => void;
+    readonly __wbg_wasmloaded_free: (a: number, b: number) => void;
     readonly accept_license: (a: number, b: any) => [number, number];
     readonly board_info: (a: number, b: number) => [number, number, number];
     readonly boards: () => [number, number, number, number];
@@ -815,6 +919,7 @@ export interface InitOutput {
     readonly flash_layout: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
     readonly flash_plan: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number, number];
     readonly gen_add_file: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly gen_assemble: (a: any, b: number, c: number, d: number, e: number, f: number, g: number) => any;
     readonly gen_build: (a: number, b: any) => [number, number, number];
     readonly gen_build_validation: (a: number, b: any) => [number, number];
     readonly gen_builder_from_json: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
@@ -826,6 +931,8 @@ export interface InitOutput {
     readonly image_select_pins: (a: number, b: number, c: number, d: number) => [number, number, number, number];
     readonly image_size: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number];
     readonly init: () => void;
+    readonly load_device: (a: number, b: number, c: any, d: number) => any;
+    readonly load_file: (a: number, b: number) => any;
     readonly mcu_chip_id: (a: number, b: number) => [number, number, number, number];
     readonly mcu_flash_base: (a: number, b: number) => [number, number, number];
     readonly mcu_info: (a: number, b: number) => [number, number, number];
@@ -854,14 +961,21 @@ export interface InitOutput {
     readonly versions: () => number;
     readonly wasmimages_firmware_images: (a: number) => [number, number];
     readonly wasmimages_metadata: (a: number) => [number, number];
-    readonly wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined___js_sys_f8d1592f528dc307___Function_fn_wasm_bindgen_740f87ab467470cf___JsValue_____wasm_bindgen_740f87ab467470cf___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
-    readonly wasm_bindgen_740f87ab467470cf___convert__closures_____invoke___wasm_bindgen_740f87ab467470cf___JsValue__core_608f92abc48d28da___result__Result_____wasm_bindgen_740f87ab467470cf___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasmloaded_board: (a: number) => [number, number];
+    readonly wasmloaded_board_size: (a: number) => [number, number];
+    readonly wasmloaded_config_json: (a: number) => [number, number, number, number];
+    readonly wasmloaded_file: (a: number, b: number, c: number) => [number, number];
+    readonly wasmloaded_files: (a: number) => [number, number];
+    readonly wasmloaded_problems: (a: number) => [number, number];
+    readonly wasmloaded_version: (a: number) => [number, number];
+    readonly wasm_bindgen_d0cceb78ed04714a___convert__closures_____invoke___js_sys_67362eb6f82f5d9b___Function_fn_wasm_bindgen_d0cceb78ed04714a___JsValue_____wasm_bindgen_d0cceb78ed04714a___sys__Undefined___js_sys_67362eb6f82f5d9b___Function_fn_wasm_bindgen_d0cceb78ed04714a___JsValue_____wasm_bindgen_d0cceb78ed04714a___sys__Undefined_______true_: (a: number, b: number, c: any, d: any) => void;
+    readonly wasm_bindgen_d0cceb78ed04714a___convert__closures_____invoke___wasm_bindgen_d0cceb78ed04714a___JsValue__core_37ee0ce0c4cd57d5___result__Result_____wasm_bindgen_d0cceb78ed04714a___JsError___true_: (a: number, b: number, c: any) => [number, number];
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
-    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_destroy_closure: (a: number, b: number) => void;
     readonly __externref_table_dealloc: (a: number) => void;
     readonly __externref_drop_slice: (a: number, b: number) => void;
